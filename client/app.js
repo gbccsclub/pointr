@@ -5,8 +5,6 @@
 
         this.video = document.createElement("video");
         this.video.autoplay = true;
-        this.video.playsInline = true; // Important for iOS
-        this.video.muted = true; // May help with autoplay policies
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
                 this.video.srcObject = stream;
