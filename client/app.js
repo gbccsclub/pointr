@@ -5,11 +5,16 @@
 
         this.video = document.createElement("video");
         this.video.autoplay = true;
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                this.video.srcObject = stream;
-            })
-            .catch(err => console.error("Error accessing webcam:", err));
+        navigator.mediaDevices.getUserMedia({ 
+            video: true,
+            // For mobile devices, use the following constraints to access the back camera
+            // { facingMode: { exact: "environment" }},
+        }).then(stream => {
+            this.video.srcObject = stream;
+            document.getElementById('msg').innerHTML = "Camera access successful";
+        }).catch(err => {
+            document.getElementById('msg').innerHTML = `Error accessing webcam: ${err.name}, ${err.message}`;
+        });
 
         this.canvas = document.getElementById('canvas');
         this.ctx = this.canvas.getContext('2d');
