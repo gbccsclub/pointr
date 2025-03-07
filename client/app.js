@@ -5,20 +5,15 @@
 
         this.video = document.createElement("video");
         this.video.autoplay = true;
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                this.video.srcObject = stream;
-                document.getElementById('msg').innerHTML = "Camera access successful";
-            })
-            .catch(err => {
-                document.getElementById('msg').innerHTML = `Error accessing webcam: ${err.name}, ${err.message}`;
-            });
-
-        // navigator.mediaDevices.getUserMedia({ video: true })
-        //     .then(stream => {
-        //         this.video.srcObject = stream;
-        //     })
-        //     .catch(err => console.error("Error accessing webcam:", err));
+        navigator.mediaDevices.getUserMedia({ 
+            video: true,
+            facingMode: "environment",
+        }).then(stream => {
+            this.video.srcObject = stream;
+            document.getElementById('msg').innerHTML = "Camera access successful";
+        }).catch(err => {
+            document.getElementById('msg').innerHTML = `Error accessing webcam: ${err.name}, ${err.message}`;
+        });
 
         this.canvas = document.getElementById('canvas');
         this.ctx = this.canvas.getContext('2d');
