@@ -6,8 +6,7 @@
         this.video = document.createElement("video");
         this.video.autoplay = true;
         navigator.mediaDevices.getUserMedia({ 
-            video: true,
-            facingMode: "environment",
+            video: { facingMode: { exact: "environment" }},
         }).then(stream => {
             this.video.srcObject = stream;
             document.getElementById('msg').innerHTML = "Camera access successful";
