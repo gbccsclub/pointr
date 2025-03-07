@@ -6,7 +6,9 @@
         this.video = document.createElement("video");
         this.video.autoplay = true;
         navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: { exact: "environment" }},
+            video: true,
+            // For mobile devices, use the following constraints to access the back camera
+            // { facingMode: { exact: "environment" }},
         }).then(stream => {
             this.video.srcObject = stream;
             document.getElementById('msg').innerHTML = "Camera access successful";
