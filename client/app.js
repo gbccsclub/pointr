@@ -5,11 +5,22 @@
 
         this.video = document.createElement("video");
         this.video.autoplay = true;
+        this.video.playsInline = true; // Important for iOS
+        this.video.muted = true; // May help with autoplay policies
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
                 this.video.srcObject = stream;
+                document.getElementById('msg').innerHTML = "Camera access successful";
             })
-            .catch(err => console.error("Error accessing webcam:", err));
+            .catch(err => {
+                document.getElementById('msg').innerHTML = `Error accessing webcam: ${err.name}, ${err.message}`;
+            });
+
+        // navigator.mediaDevices.getUserMedia({ video: true })
+        //     .then(stream => {
+        //         this.video.srcObject = stream;
+        //     })
+        //     .catch(err => console.error("Error accessing webcam:", err));
 
         this.canvas = document.getElementById('canvas');
         this.ctx = this.canvas.getContext('2d');
