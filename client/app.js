@@ -35,6 +35,7 @@
 
     onDetection(detection) {
         this.visualizeDetection(detection);
+        this.visualizeDetectionCorners(detection);
     }
 
     visualizeDetection(detection) {
@@ -49,6 +50,16 @@
         this.ctx.lineWidth = 5;
         this.ctx.stroke();
         this.ctx.closePath();
+    }
+
+    visualizeDetectionCorners(detection) {
+        const corners = detection.corners;
+        if (!corners) return;
+        this.ctx.font = '24px Arial';
+        this.ctx.fillStyle = 'white';
+        corners.forEach((corner, index) => {
+            this.ctx.fillText(index, corner.x, corner.y);
+        });
     }
 
     displayWebcamVideo() {
