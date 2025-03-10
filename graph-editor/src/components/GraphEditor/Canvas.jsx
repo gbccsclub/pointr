@@ -261,9 +261,9 @@ const Canvas = ({
     
     // Draw label with slight offset for better readability
     ctx.fillStyle = '#1e293b';
-    ctx.font = '11px system-ui';
+    ctx.font = '7px system-ui'; // Reduced from 9px to 7px
     ctx.textAlign = 'center';
-    ctx.fillText(node.label, node.x, node.y + (radius + 12));
+    ctx.fillText(node.label, node.x, node.y + (radius + 8)); // Reduced offset from 10 to 8
   };
 
   const drawEdge = (ctx, fromNode, toNode, edge) => {
@@ -303,9 +303,9 @@ const Canvas = ({
     const midY = (fromNode.y + toNode.y) / 2;
     
     ctx.fillStyle = '#666';
-    ctx.font = '12px Arial';
+    ctx.font = '7px Arial'; // Reduced from 9px to 7px
     ctx.textAlign = 'center';
-    ctx.fillText(Math.round(distance), midX, midY - 5);
+    ctx.fillText(Math.round(distance), midX, midY - 3); // Reduced offset from 4 to 3
   };
 
   const handleWheel = (e) => {
