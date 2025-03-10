@@ -73,15 +73,23 @@ const GraphEditor = () => {
 
   const handleEdgeCreate = (fromNode, toNode) => {
     if (fromNode && toNode && fromNode !== toNode) {
-      const newEdge = {
-        id: `edge-${Date.now()}`,
-        from: fromNode.id,
-        to: toNode.id
-      };
-      
-      const newEdges = [...edges, newEdge];
-      setEdges(newEdges);
-      saveToHistory({ nodes, edges: newEdges });
+      // Check if an edge already exists between these nodes in either direction
+      const edgeExists = edges.some(edge => 
+        (edge.from === fromNode.id && edge.to === toNode.id) ||
+        (edge.from === toNode.id && edge.to === fromNode.id)
+      );
+
+      if (!edgeExists) {
+        const newEdge = {
+          id: `edge-${Date.now()}`,
+          from: fromNode.id,
+          to: toNode.id
+        };
+        
+        const newEdges = [...edges, newEdge];
+        setEdges(newEdges);
+        saveToHistory({ nodes, edges: newEdges });
+      }
     }
   };
 
