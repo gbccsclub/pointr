@@ -6,11 +6,15 @@ export const calculateAngleAndDistance = (fromNode, toNode) => {
   let angle = Math.atan2(dy, dx) * (180 / Math.PI);
   if (angle < 0) angle += 360; // Convert negative angles to positive
   
+  // Calculate reverse angle (opposite direction)
+  let reverseAngle = (angle + 180) % 360;
+  
   // Calculate distance
   const distance = Math.sqrt(dx * dx + dy * dy);
   
   return {
     angle: Math.round(angle),
+    reverseAngle: Math.round(reverseAngle),
     distance: Math.round(distance)
   };
 };
@@ -24,24 +28,29 @@ export const generateCypherExport = (nodes, edges) => {
     return `CREATE (n${numericId}:Node {id: ${numericId}, label: '${node.label}', x: ${node.x}, y: ${node.y}})`;
   });
 
-  // Create relationships with angle and distance
-  const edgeStatements = edges.map(edge => {
+  // Create bidirectional relationships with angles from both perspectives
+  const edgeStatements = edges.flatMap(edge => {
     const fromNode = nodes.find(n => n.id === edge.from);
     const toNode = nodes.find(n => n.id === edge.to);
-    const { angle, distance } = calculateAngleAndDistance(fromNode, toNode);
+    const { angle, reverseAngle, distance } = calculateAngleAndDistance(fromNode, toNode);
     
     const fromId = extractNodeId(edge.from);
     const toId = extractNodeId(edge.to);
     
-    return `CREATE (n${fromId})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(n${toId})`;
+    return [
+      // Forward direction
+      `CREATE (n${fromId})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(n${toId})`,
+      // Reverse direction
+      `CREATE (n${toId})-[:CONNECTS_TO {angle: ${reverseAngle}, distance: ${distance}}]->(n${fromId})`
+    ];
   });
 
   return [...nodeStatements, ...edgeStatements].join('\n');
 };
 
 export const parseCypherImport = (cypherQuery) => {
-  const nodes = [];
-  const edges = [];
+  const nodes = new Set();
+  const edges = new Set();
   
   // Simple regex patterns for parsing
   const nodePattern = /CREATE \((\w+):Node {(.+?)}\)/g;
@@ -56,7 +65,7 @@ export const parseCypherImport = (cypherQuery) => {
         .map(([key, value]) => [key, value.replace(/['"]/g, '')])
     );
     
-    nodes.push({
+    nodes.add({
       id: `node-${properties.id}`,
       label: properties.label,
       x: parseInt(properties.x),
@@ -64,18 +73,26 @@ export const parseCypherImport = (cypherQuery) => {
     });
   }
   
-  // Parse edges
+  // Parse edges (only store one direction since we create bidirectional edges)
   let edgeMatch;
   while ((edgeMatch = edgePattern.exec(cypherQuery)) !== null) {
-    const fromNodeId = `node-${edgeMatch[1].replace('n', '')}`;
-    const toNodeId = `node-${edgeMatch[3].replace('n', '')}`;
+    const fromId = parseInt(edgeMatch[1].replace('n', ''));
+    const toId = parseInt(edgeMatch[3].replace('n', ''));
     
-    edges.push({
-      id: `edge-${fromNodeId}-${toNodeId}`,
-      from: fromNodeId,
-      to: toNodeId
-    });
+    // Only add edge if we haven't seen its reverse yet
+    const edgeKey = `${Math.min(fromId, toId)}-${Math.max(fromId, toId)}`;
+    if (!edges.has(edgeKey)) {
+      edges.add(edgeKey);
+      edges.add({
+        id: `edge-node-${fromId}-node-${toId}`,
+        from: `node-${fromId}`,
+        to: `node-${toId}`
+      });
+    }
   }
   
-  return { nodes, edges };
+  return { 
+    nodes: Array.from(nodes), 
+    edges: Array.from(edges).filter(edge => typeof edge === 'object')
+  };
 };

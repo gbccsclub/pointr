@@ -108,19 +108,35 @@ const Canvas = ({
   };
 
   const drawNode = (ctx, node, isSelected) => {
+    // Reduce radius from 10 to 6
+    const radius = 6;
+    
+    // Get the computed style to access CSS variables
+    const computedStyle = getComputedStyle(document.documentElement);
+    const primaryColor = computedStyle.getPropertyValue('--primary').trim();
+    const accentColor = computedStyle.getPropertyValue('--accent').trim();
+    
+    // Draw main circle
     ctx.beginPath();
-    ctx.arc(node.x, node.y, 10, 0, 2 * Math.PI);
-    ctx.fillStyle = isSelected ? 'var(--node-selected)' : 'var(--node)';
+    ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
+    
+    // Use primary blue for fill and add subtle shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+    ctx.shadowBlur = 4;
+    ctx.fillStyle = '#2563eb'; // Explicit primary blue color
     ctx.fill();
-    ctx.strokeStyle = isSelected ? 'var(--node-selected)' : 'var(--node)';
-    ctx.lineWidth = 2;
+    
+    // Draw border with selection indicator
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = isSelected ? '#22c55e' : '#2563eb'; // Explicit colors
+    ctx.lineWidth = 1.5;
     ctx.stroke();
     
-    // Draw label
-    ctx.fillStyle = 'var(--text)';
-    ctx.font = '12px system-ui';
+    // Draw label with slight offset for better readability
+    ctx.fillStyle = '#1e293b'; // Text color
+    ctx.font = '11px system-ui';
     ctx.textAlign = 'center';
-    ctx.fillText(node.label, node.x, node.y + 25);
+    ctx.fillText(node.label, node.x, node.y + 18);
   };
 
   const drawEdge = (ctx, fromNode, toNode) => {
