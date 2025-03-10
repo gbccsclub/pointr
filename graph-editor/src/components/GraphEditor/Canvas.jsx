@@ -282,8 +282,11 @@ const Canvas = ({
     const snappedX = snapToGrid ? snapToGridHelper(x, gridSize) : x;
     const snappedY = snapToGrid ? snapToGridHelper(y, gridSize) : y;
 
+    // Increase hit detection radius and account for zoom
+    const hitRadius = 10 / zoom; // Adjust this value as needed
+
     const clickedNode = nodes.find(node => 
-      Math.hypot(node.x - snappedX, node.y - snappedY) < 15 / zoom
+      Math.hypot(node.x - snappedX, node.y - snappedY) <= hitRadius
     );
 
     if (clickedNode) {
@@ -304,8 +307,14 @@ const Canvas = ({
           setDrawingFrom(clickedNode);
         }
       }
-    } else if (editorMode === 'node') {
-      const newNode = createNode(x, y);
+      // Prevent creating new node when clicking on existing one
+      e.stopPropagation();
+      return;
+    }
+
+    // Only create new node if in node mode and didn't click existing node
+    if (editorMode === 'node') {
+      const newNode = createNode(snappedX, snappedY);
       const updatedNodes = [...nodes, newNode];
       setNodes(updatedNodes);
       setSelectedNode(newNode);
