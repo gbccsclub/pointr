@@ -1,8 +1,8 @@
 import { useCallback, useRef } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 
-export const useGraphOperations = (initialNodeCounter = 0, onNodeCounterChange) => {
+export const useGraphOperations = (initialNodeCounter = 0, initialRoomCounter = 0, onNodeCounterChange, onRoomCounterChange) => {
   const nodeIdCounter = useRef(Number(initialNodeCounter));
+  const roomIdCounter = useRef(Number(initialRoomCounter));
 
   const calculateEdgeDistance = useCallback((fromNode, toNode) => {
     const dx = toNode.x - fromNode.x;
@@ -15,23 +15,20 @@ export const useGraphOperations = (initialNodeCounter = 0, onNodeCounterChange) 
   }, []);
 
   const createPathNode = useCallback((x, y) => {
-    // Ensure we have a valid number
     const id = Number(nodeIdCounter.current);
     if (isNaN(id)) {
       console.error('Invalid node counter:', nodeIdCounter.current);
       nodeIdCounter.current = 0;
     }
     
-    // Create node with current counter value
     const node = {
-      id: String(nodeIdCounter.current), // Convert to string to maintain consistency
+      id: `n${nodeIdCounter.current}`, // Prefix with 'n' for path nodes
       type: 'pathNode',
       x: x,
       y: y,
       label: String(nodeIdCounter.current)
     };
     
-    // Increment counter after node creation
     nodeIdCounter.current = id + 1;
     
     if (onNodeCounterChange) {
@@ -42,16 +39,28 @@ export const useGraphOperations = (initialNodeCounter = 0, onNodeCounterChange) 
   }, [onNodeCounterChange]);
 
   const createRoomNode = useCallback((x, y) => {
-    // Generate a 5-digit random number
-    const randomId = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
-    return {
-      id: randomId,
+    const id = Number(roomIdCounter.current);
+    if (isNaN(id)) {
+      console.error('Invalid room counter:', roomIdCounter.current);
+      roomIdCounter.current = 0;
+    }
+
+    const node = {
+      id: `r${roomIdCounter.current}`, // Prefix with 'r' for room nodes
       type: 'roomNode',
       x: x,
       y: y,
-      label: `R${randomId}`
+      label: `R${roomIdCounter.current}`
     };
-  }, []);
+    
+    roomIdCounter.current = id + 1;
+    
+    if (onRoomCounterChange) {
+      onRoomCounterChange(roomIdCounter.current);
+    }
+    
+    return node;
+  }, [onRoomCounterChange]);
 
   const setNodeCounter = useCallback((value) => {
     const numValue = Number(value);
@@ -63,15 +72,31 @@ export const useGraphOperations = (initialNodeCounter = 0, onNodeCounterChange) 
     }
   }, [onNodeCounterChange]);
 
+  const setRoomCounter = useCallback((value) => {
+    const numValue = Number(value);
+    if (!isNaN(numValue)) {
+      roomIdCounter.current = numValue;
+      if (onRoomCounterChange) {
+        onRoomCounterChange(numValue);
+      }
+    }
+  }, [onRoomCounterChange]);
+
   const getCurrentNodeCounter = useCallback(() => {
     return nodeIdCounter.current;
+  }, []);
+
+  const getCurrentRoomCounter = useCallback(() => {
+    return roomIdCounter.current;
   }, []);
 
   return {
     createPathNode,
     createRoomNode,
     setNodeCounter,
+    setRoomCounter,
     getCurrentNodeCounter,
+    getCurrentRoomCounter,
     snapToGridHelper,
     calculateEdgeDistance
   };

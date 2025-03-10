@@ -30,6 +30,7 @@ const GraphEditor = () => {
   const [overlayImage, setOverlayImage] = useState(null);
   const [imageOpacity, setImageOpacity] = useState(0.5);
   const [nodeCounter, setNodeCounter] = useState(0);
+  const [roomCounter, setRoomCounter] = useState(0);
   
   // Load current workspace on mount
   useEffect(() => {
@@ -53,6 +54,7 @@ const GraphEditor = () => {
       setOverlayImage(data.overlayImage);
       setImageOpacity(data.imageOpacity);
       setNodeCounter(data.nodeCounter);
+      setRoomCounter(data.roomCounter);
       setCurrentWorkspace(workspace);
       saveCurrentWorkspace(workspaceId);
     }
@@ -211,13 +213,14 @@ const GraphEditor = () => {
           edges,
           overlayImage,
           imageOpacity,
-          nodeCounter // Pass the current nodeCounter
+          nodeCounter,
+          roomCounter
         );
       }, 1000);
 
       return () => clearTimeout(saveTimeout);
     }
-  }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity, nodeCounter]);
+  }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity, nodeCounter, roomCounter]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -238,10 +241,26 @@ const GraphEditor = () => {
         edges,
         overlayImage,
         imageOpacity,
+        newCounter,
+        roomCounter
+      );
+    }
+  }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity, roomCounter]);
+
+  const handleRoomCounterChange = useCallback((newCounter) => {
+    setRoomCounter(newCounter);
+    if (currentWorkspace) {
+      saveToWorkspace(
+        currentWorkspace.id,
+        nodes,
+        edges,
+        overlayImage,
+        imageOpacity,
+        nodeCounter,
         newCounter
       );
     }
-  }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity]);
+  }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity, nodeCounter]);
 
   return (
     <div className="fixed inset-0 overflow-hidden">
@@ -338,7 +357,9 @@ const GraphEditor = () => {
         setSelectedEdge={setSelectedEdge}
         nodeSize={nodeSize}
         initialNodeCounter={nodeCounter}
+        initialRoomCounter={roomCounter}
         onNodeCounterChange={handleNodeCounterChange}
+        onRoomCounterChange={handleRoomCounterChange}
       />
     </div>
   );

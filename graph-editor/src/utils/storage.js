@@ -19,13 +19,14 @@ export const saveCurrentWorkspace = (workspaceId) => {
   localStorage.setItem(STORAGE_KEYS.CURRENT_WORKSPACE, workspaceId);
 };
 
-export const saveToWorkspace = (workspaceId, nodes, edges, overlayImage, imageOpacity, nodeCounter) => {
+export const saveToWorkspace = (workspaceId, nodes, edges, overlayImage, imageOpacity, nodeCounter, roomCounter) => {
   const workspaceKey = getWorkspaceKey(workspaceId);
   const workspaceData = {
     nodes,
     edges,
     imageOpacity,
-    nodeCounter: Number(nodeCounter), // Ensure it's saved as a number
+    nodeCounter: Number(nodeCounter),
+    roomCounter: Number(roomCounter),
     overlayImage,
     lastModified: Date.now()
   };
@@ -44,7 +45,8 @@ export const loadFromWorkspace = (workspaceId) => {
         edges: [],
         overlayImage: null,
         imageOpacity: 0.5,
-        nodeCounter: 0
+        nodeCounter: 0,
+        roomCounter: 0
       };
     }
 
@@ -58,7 +60,21 @@ export const loadFromWorkspace = (workspaceId) => {
       nodeCounter = Math.max(
         ...(data.nodes || [])
           .filter(n => n.type === 'pathNode')
-          .map(n => parseInt(n.id, 10))
+          .map(n => parseInt(n.id.substring(1), 10)) // Remove 'n' prefix
+          .filter(id => !isNaN(id)),
+        -1
+      ) + 1;
+    }
+
+    // Calculate the next available room counter if not present
+    let roomCounter;
+    if (typeof data.roomCounter === 'number' && !isNaN(data.roomCounter)) {
+      roomCounter = data.roomCounter;
+    } else {
+      roomCounter = Math.max(
+        ...(data.nodes || [])
+          .filter(n => n.type === 'roomNode')
+          .map(n => parseInt(n.id.substring(1), 10)) // Remove 'r' prefix
           .filter(id => !isNaN(id)),
         -1
       ) + 1;
@@ -69,7 +85,8 @@ export const loadFromWorkspace = (workspaceId) => {
       edges: data.edges || [],
       overlayImage: data.overlayImage,
       imageOpacity: data.imageOpacity ?? 0.5,
-      nodeCounter: nodeCounter
+      nodeCounter: nodeCounter,
+      roomCounter: roomCounter
     };
   } catch (error) {
     console.error('Error loading workspace:', error);
@@ -78,7 +95,8 @@ export const loadFromWorkspace = (workspaceId) => {
       edges: [],
       overlayImage: null,
       imageOpacity: 0.5,
-      nodeCounter: 0
+      nodeCounter: 0,
+      roomCounter: 0
     };
   }
 };

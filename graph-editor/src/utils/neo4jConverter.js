@@ -19,15 +19,17 @@ export const calculateAngleAndDistance = (fromNode, toNode) => {
   };
 };
 
-const extractNodeId = (nodeId) => parseInt(nodeId.replace('node-', ''));
-
-export const generateCypherExport = (nodes, edges) => {
+export const convertToNeo4j = (nodes, edges) => {
   // Create nodes
   const nodeStatements = nodes.map(node => {
+    const numericId = parseInt(node.id.substring(1));
+    if (isNaN(numericId)) {
+      console.error('Invalid node ID:', node.id);
+      return null;
+    }
+    
     const nodeProps = {
-      id: node.type === 'pathNode' ? 
-        parseInt(node.id) : 
-        node.id,
+      id: numericId,
       label: node.label,
       type: node.type,
       x: Math.round(node.x),
@@ -35,59 +37,60 @@ export const generateCypherExport = (nodes, edges) => {
     };
 
     const nodeType = node.type === 'pathNode' ? 'PathNode' : 'RoomNode';
-    const nodeId = node.type === 'pathNode' ? 
-      `n${nodeProps.id}` : 
-      `r${nodeProps.id}`;
+    const varPrefix = node.type === 'pathNode' ? 'n' : 'r';
 
-    return `CREATE (${nodeId}:${nodeType} {
-      id: ${typeof nodeProps.id === 'number' ? nodeProps.id : `'${nodeProps.id}'`}, 
+    return `CREATE (${varPrefix}${numericId}:${nodeType} {
+      id: ${nodeProps.id}, 
       label: '${nodeProps.label}', 
       type: '${nodeProps.type}',
       x: ${nodeProps.x}, 
       y: ${nodeProps.y}
     })`;
-  });
+  }).filter(stmt => stmt !== null);
 
   // Create relationships with angles
-  const edgeStatements = edges.flatMap(edge => {
+  const edgeStatements = edges.map(edge => {
     const fromNode = nodes.find(n => n.id === edge.from);
     const toNode = nodes.find(n => n.id === edge.to);
+    
+    if (!fromNode || !toNode) return null;
+    
+    const fromId = parseInt(fromNode.id.substring(1));
+    const toId = parseInt(toNode.id.substring(1));
+    
+    if (isNaN(fromId) || isNaN(toId)) return null;
+    
+    const fromPrefix = fromNode.type === 'pathNode' ? 'n' : 'r';
+    const toPrefix = toNode.type === 'pathNode' ? 'n' : 'r';
+    
     const { angle, reverseAngle, distance } = calculateAngleAndDistance(fromNode, toNode);
     
-    const fromId = fromNode.type === 'pathNode' ? 
-      `n${edge.from}` : 
-      `r${edge.from}`;
-    const toId = toNode.type === 'pathNode' ? 
-      `n${edge.to}` : 
-      `r${edge.to}`;
-    
-    // If either node is a room node, check the direction
-    if (fromNode.type === 'roomNode' || toNode.type === 'roomNode') {
-      // Only create edge if it's from pathNode to roomNode
-      if (fromNode.type === 'pathNode' && toNode.type === 'roomNode') {
-        return [`CREATE (${fromId})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(${toId})`];
-      }
-      return []; // Skip edge creation for roomNode to pathNode
+    // If both nodes are path nodes, create bidirectional edges
+    if (fromNode.type === 'pathNode' && toNode.type === 'pathNode') {
+      return [
+        `CREATE (${fromPrefix}${fromId})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(${toPrefix}${toId})`,
+        `CREATE (${toPrefix}${toId})-[:CONNECTS_TO {angle: ${reverseAngle}, distance: ${distance}}]->(${fromPrefix}${fromId})`
+      ].join('\n');
     }
-
-    // For path node to path node connections, create bidirectional edges
-    return [
-      `CREATE (${fromId})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(${toId})`,
-      `CREATE (${fromId})<-[:CONNECTS_TO {angle: ${reverseAngle}, distance: ${distance}}]-(${toId})`
-    ];
-  });
+    
+    // For room node connections, create only one direction
+    return `CREATE (${fromPrefix}${fromId})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(${toPrefix}${toId})`;
+  }).filter(stmt => stmt !== null);
 
   return [...nodeStatements, ...edgeStatements].join('\n');
 };
+
+// Export the alias after the function is defined
+export const generateCypherExport = convertToNeo4j;
 
 export const parseCypherImport = (cypherQuery) => {
   const nodes = new Set();
   const edges = new Set();
   
-  // Updated regex patterns to handle both node types
-  const pathNodePattern = /CREATE \(n(\d+):PathNode {(.+?)}\)/g;
-  const roomNodePattern = /CREATE \(r(\w+):RoomNode {(.+?)}\)/g;
-  const edgePattern = /CREATE \((\w+)\)-\[:CONNECTS_TO {(.+?)}\]->\((\w+)\)/g;
+  // Updated regex patterns to handle both node types with numeric IDs
+  const pathNodePattern = /CREATE \((\d+):PathNode {(.+?)}\)/g;
+  const roomNodePattern = /CREATE \((\d+):RoomNode {(.+?)}\)/g;
+  const edgePattern = /CREATE \((\d+)\)-\[:CONNECTS_TO {(.+?)}\]->\((\d+)\)/g;
   
   // Parse path nodes
   let pathNodeMatch;
@@ -95,7 +98,7 @@ export const parseCypherImport = (cypherQuery) => {
     const id = pathNodeMatch[1];
     const props = parseProperties(pathNodeMatch[2]);
     nodes.add({
-      id: id,
+      id: `n${id}`, // Add 'n' prefix for internal use
       type: 'pathNode',
       label: props.label,
       x: parseInt(props.x),
@@ -109,7 +112,7 @@ export const parseCypherImport = (cypherQuery) => {
     const id = roomNodeMatch[1];
     const props = parseProperties(roomNodeMatch[2]);
     nodes.add({
-      id: id,
+      id: `r${id}`, // Add 'r' prefix for internal use
       type: 'roomNode',
       label: props.label,
       x: parseInt(props.x),
@@ -123,18 +126,15 @@ export const parseCypherImport = (cypherQuery) => {
     const fromId = edgeMatch[1];
     const toId = edgeMatch[3];
     
-    // Convert node IDs to the correct format
-    const from = fromId.startsWith('n') ? fromId.slice(1) : fromId.slice(1);
-    const to = toId.startsWith('n') ? toId.slice(1) : toId.slice(1);
+    // Find the corresponding nodes to determine their types
+    const fromNode = Array.from(nodes).find(n => parseInt(n.id.substring(1)) === parseInt(fromId));
+    const toNode = Array.from(nodes).find(n => parseInt(n.id.substring(1)) === parseInt(toId));
     
-    // Only add edge if we haven't seen its reverse yet
-    const edgeKey = `${Math.min(from, to)}-${Math.max(from, to)}`;
-    if (!edges.has(edgeKey)) {
-      edges.add(edgeKey);
+    if (fromNode && toNode) {
       edges.add({
-        id: `edge-${from}-${to}`,
-        from,
-        to
+        id: `edge-${fromNode.id}-${toNode.id}`,
+        from: fromNode.id,
+        to: toNode.id
       });
     }
   }
