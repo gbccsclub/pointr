@@ -41,7 +41,7 @@ export const generateCypherExport = (nodes, edges) => {
       // Forward direction
       `CREATE (n${fromId})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(n${toId})`,
       // Reverse direction
-      `CREATE (n${toId})-[:CONNECTS_TO {angle: ${reverseAngle}, distance: ${distance}}]->(n${fromId})`
+      `CREATE (n${fromId})<-[:CONNECTS_TO {angle: ${reverseAngle}, distance: ${distance}}]-(n${toId})`
     ];
   });
 
