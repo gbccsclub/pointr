@@ -2,25 +2,23 @@ import React from 'react';
 
 const Instructions = ({ nodes, edges, gridSize, selectedNode }) => {
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4 backdrop-blur-sm bg-opacity-90 w-64">
-      <h3 className="font-medium text-sm mb-3 text-slate-700">Instructions</h3>
-      <ul className="text-sm space-y-1 text-slate-600 mb-4">
-        <li>• Click anywhere to create a node</li>
-        <li>• Click a node to select it</li>
-        <li>• Drag from a node to create an edge</li>
-        <li>• Press Delete to remove selected node</li>
-        <li>• Press Ctrl+Z to undo</li>
+    <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-xs w-48">
+      <div className="flex justify-between items-center mb-1.5">
+        <span className="font-medium text-slate-700">Instructions</span>
+        <span className="text-slate-500">{nodes.length} nodes, {edges.length} edges</span>
+      </div>
+      <ul className="space-y-0.5 text-slate-600 mb-1">
+        <li>• Click to create node</li>
+        <li>• Click node to select</li>
+        <li>• Drag from node for edge</li>
+        <li>• Del to remove node</li>
+        <li>• Ctrl+Z to undo</li>
       </ul>
-      
-      <h4 className="font-medium text-sm mb-2 text-slate-700">Statistics</h4>
-      <ul className="text-sm space-y-1 text-slate-600">
-        <li>Nodes: {nodes.length}</li>
-        <li>Edges: {edges.length}</li>
-        <li>Grid Size: {gridSize}px</li>
-        {selectedNode && (
-          <li>Selected: {selectedNode.label} ({selectedNode.x}, {selectedNode.y})</li>
-        )}
-      </ul>
+      {selectedNode && (
+        <div className="text-slate-500">
+          Selected: {selectedNode.label} ({selectedNode.x}, {selectedNode.y})
+        </div>
+      )}
     </div>
   );
 };
