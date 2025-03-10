@@ -25,7 +25,7 @@ export const saveToWorkspace = (workspaceId, nodes, edges, overlayImage, imageOp
     nodes,
     edges,
     imageOpacity,
-    nodeCounter,
+    nodeCounter, // Make sure we store this
     overlayImage,
     lastModified: Date.now()
   };
@@ -44,7 +44,7 @@ export const loadFromWorkspace = (workspaceId) => {
         edges: [],
         overlayImage: null,
         imageOpacity: 0.5,
-        nodeCounter: 0
+        nodeCounter: 0 // Default counter value
       };
     }
 
@@ -54,7 +54,8 @@ export const loadFromWorkspace = (workspaceId) => {
       edges: data.edges || [],
       overlayImage: data.overlayImage,
       imageOpacity: data.imageOpacity ?? 0.5,
-      nodeCounter: data.nodeCounter || 0
+      nodeCounter: typeof data.nodeCounter === 'number' ? data.nodeCounter : 
+        Math.max(...(data.nodes || []).map(n => parseInt(n.id.replace('node-', ''), 10)), -1) + 1
     };
   } catch (error) {
     console.error('Error loading workspace:', error);

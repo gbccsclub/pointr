@@ -5,7 +5,6 @@ const WorkspaceManager = ({
   currentWorkspace,
   onWorkspaceChange,
   onWorkspaceCreate,
-  onWorkspaceRename,
   onWorkspaceDelete
 }) => {
   const [isCreating, setIsCreating] = useState(false);
@@ -57,12 +56,26 @@ const WorkspaceManager = ({
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => setIsCreating(true)}
-            className="px-2 py-1 bg-blue-50 text-blue-600 rounded"
-          >
-            New Workspace
-          </button>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setIsCreating(true)}
+              className="px-2 py-1 bg-blue-50 text-blue-600 rounded"
+            >
+              New
+            </button>
+            {workspaces.length > 1 && currentWorkspace && (
+              <button
+                onClick={() => {
+                  if (confirm('Are you sure you want to delete this workspace?')) {
+                    onWorkspaceDelete(currentWorkspace.id);
+                  }
+                }}
+                className="px-2 py-1 bg-red-50 text-red-600 rounded"
+              >
+                Delete
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

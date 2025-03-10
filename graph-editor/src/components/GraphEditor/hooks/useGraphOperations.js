@@ -1,27 +1,31 @@
 import { useCallback, useRef } from 'react';
 
-export const useGraphOperations = (initialNodeCounter = 0) => {
+export const useGraphOperations = (initialNodeCounter = 0, onNodeCounterChange) => {
   const nodeIdCounter = useRef(initialNodeCounter);
+
+  const snapToGridHelper = useCallback((value, gridSize) => {
+    return Math.round(value / gridSize) * gridSize;
+  }, []);
 
   const createNode = useCallback((x, y) => {
     const id = nodeIdCounter.current++;
+    if (onNodeCounterChange) {
+      onNodeCounterChange(nodeIdCounter.current);
+    }
     return {
       id: `node-${id}`,
       x: x,
       y: y,
       label: `${id}`
     };
-  }, []);
+  }, [onNodeCounterChange]);
 
-  const snapToGridHelper = useCallback((value, gridSize) => {
-    return Math.round(value / gridSize) * gridSize;
-  }, []);
-
-  const calculateEdgeDistance = useCallback((fromNode, toNode) => {
-    const dx = toNode.x - fromNode.x;
-    const dy = toNode.y - fromNode.y;
-    return Math.sqrt(dx * dx + dy * dy);
-  }, []);
+  const setNodeCounter = useCallback((value) => {
+    nodeIdCounter.current = value;
+    if (onNodeCounterChange) {
+      onNodeCounterChange(value);
+    }
+  }, [onNodeCounterChange]);
 
   const getCurrentNodeCounter = useCallback(() => {
     return nodeIdCounter.current;
@@ -29,8 +33,8 @@ export const useGraphOperations = (initialNodeCounter = 0) => {
 
   return {
     createNode,
-    snapToGridHelper,
-    calculateEdgeDistance,
-    getCurrentNodeCounter
+    setNodeCounter,
+    getCurrentNodeCounter,
+    snapToGridHelper
   };
 };

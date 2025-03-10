@@ -28,6 +28,7 @@ const GraphEditor = () => {
   const [selectedEdge, setSelectedEdge] = useState(null);
   const [overlayImage, setOverlayImage] = useState(null);
   const [imageOpacity, setImageOpacity] = useState(0.5);
+  const [nodeCounter, setNodeCounter] = useState(0);
   
   // Load current workspace on mount
   useEffect(() => {
@@ -50,6 +51,7 @@ const GraphEditor = () => {
       setEdges(data.edges);
       setOverlayImage(data.overlayImage);
       setImageOpacity(data.imageOpacity);
+      setNodeCounter(data.nodeCounter);
       setCurrentWorkspace(workspace);
       saveCurrentWorkspace(workspaceId);
     }
@@ -66,6 +68,25 @@ const GraphEditor = () => {
     setWorkspaces(updatedWorkspaces);
     saveWorkspaceList(updatedWorkspaces);
     handleWorkspaceChange(newWorkspace.id);
+  };
+
+  const handleWorkspaceDelete = (workspaceId) => {
+    // Remove workspace data
+    const workspaceKey = `graph-editor-workspace-${workspaceId}`;
+    localStorage.removeItem(workspaceKey);
+    
+    // Update workspaces list
+    const updatedWorkspaces = workspaces.filter(w => w.id !== workspaceId);
+    setWorkspaces(updatedWorkspaces);
+    saveWorkspaceList(updatedWorkspaces);
+
+    // Switch to another workspace
+    if (updatedWorkspaces.length > 0) {
+      handleWorkspaceChange(updatedWorkspaces[0].id);
+    } else {
+      // Create a new default workspace if none exists
+      handleWorkspaceCreate('Default Workspace');
+    }
   };
 
   const [isDrawing, setIsDrawing] = useState(false);
@@ -207,6 +228,7 @@ const GraphEditor = () => {
 
   // Add this function to handle node counter changes
   const handleNodeCounterChange = useCallback((newCounter) => {
+    setNodeCounter(newCounter);
     if (currentWorkspace) {
       saveToWorkspace(
         currentWorkspace.id,
@@ -228,6 +250,7 @@ const GraphEditor = () => {
           currentWorkspace={currentWorkspace}
           onWorkspaceChange={handleWorkspaceChange}
           onWorkspaceCreate={handleWorkspaceCreate}
+          onWorkspaceDelete={handleWorkspaceDelete}
         />
       </div>
 
@@ -304,6 +327,7 @@ const GraphEditor = () => {
         selectedEdge={selectedEdge}
         setSelectedEdge={setSelectedEdge}
         nodeSize={nodeSize}
+        initialNodeCounter={nodeCounter}
         onNodeCounterChange={handleNodeCounterChange}
       />
     </div>

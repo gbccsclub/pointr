@@ -24,8 +24,9 @@ const Canvas = ({
   editorMode,
   selectedEdge,
   setSelectedEdge,
-  nodeSize, // Add nodeSize prop
-  onNodeCounterChange, // Add this prop
+  nodeSize,
+  onNodeCounterChange,
+  initialNodeCounter = 0
 }) => {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
@@ -35,15 +36,20 @@ const Canvas = ({
   const [isDragging, setIsDragging] = useState(false);
   const [draggedNode, setDraggedNode] = useState(null);
   
-  // Add new state for canvas manipulation
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [lastPanPoint, setLastPanPoint] = useState(null);
 
-  const { createNode, snapToGridHelper, calculateEdgeDistance, getCurrentNodeCounter } = useGraphOperations(
-    Math.max(...nodes.map(n => parseInt(n.id.replace('node-', ''), 10)), -1) + 1
+  const { createNode, snapToGridHelper, calculateEdgeDistance, getCurrentNodeCounter, setNodeCounter } = useGraphOperations(
+    initialNodeCounter,
+    onNodeCounterChange
   );
+
+  // Add effect to handle node counter initialization
+  useEffect(() => {
+    setNodeCounter(initialNodeCounter);
+  }, [initialNodeCounter, setNodeCounter]);
 
   // Convert screen coordinates to canvas coordinates
   const screenToCanvas = (screenX, screenY) => {
