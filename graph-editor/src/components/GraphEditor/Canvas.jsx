@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useGraphOperations } from './hooks/useGraphOperations';
 
 const Canvas = ({
@@ -25,11 +25,35 @@ const Canvas = ({
 }) => {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
+  const gridCanvasRef = useRef(null);
+  const gridPatternRef = useRef(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  // Add new state for dragging
   const [isDragging, setIsDragging] = useState(false);
   const [draggedNode, setDraggedNode] = useState(null);
+  
+  // Add new state for canvas manipulation
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [lastPanPoint, setLastPanPoint] = useState(null);
+
   const { createNode, snapToGridHelper, calculateEdgeDistance } = useGraphOperations();
+
+  // Convert screen coordinates to canvas coordinates
+  const screenToCanvas = (screenX, screenY) => {
+    return {
+      x: (screenX - offset.x) / zoom,
+      y: (screenY - offset.y) / zoom
+    };
+  };
+
+  // Convert canvas coordinates to screen coordinates
+  const canvasToScreen = (canvasX, canvasY) => {
+    return {
+      x: canvasX * zoom + offset.x,
+      y: canvasY * zoom + offset.y
+    };
+  };
 
   useEffect(() => {
     if (overlayImage) {
@@ -45,12 +69,42 @@ const Canvas = ({
     }
   }, [overlayImage]);
 
+  const createGridPattern = useCallback(() => {
+    if (!showGrid) return;
+
+    const patternCanvas = document.createElement('canvas');
+    const size = gridSize * zoom;
+    patternCanvas.width = size;
+    patternCanvas.height = size;
+    const patternCtx = patternCanvas.getContext('2d');
+
+    patternCtx.fillStyle = 'var(--grid)';
+    patternCtx.beginPath();
+    patternCtx.arc(0, 0, 1 * zoom, 0, 2 * Math.PI);
+    patternCtx.fill();
+
+    const pattern = canvasRef.current?.getContext('2d').createPattern(patternCanvas, 'repeat');
+    gridPatternRef.current = pattern;
+  }, [gridSize, zoom, showGrid]);
+
+  useEffect(() => {
+    createGridPattern();
+  }, [gridSize, zoom, showGrid, createGridPattern]);
+
   const redrawCanvas = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
     // Clear canvas
     ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
+    
+    // Draw grid in screen space
+    drawGrid(ctx);
+    
+    // Apply transform for other elements
+    ctx.save();
+    ctx.translate(offset.x, offset.y);
+    ctx.scale(zoom, zoom);
     
     // Draw background image if exists
     if (imageRef.current) {
@@ -60,16 +114,11 @@ const Canvas = ({
         canvasSize.width / img.width,
         canvasSize.height / img.height
       );
-      const x = (canvasSize.width - img.width * scale) / 2;
-      const y = (canvasSize.height - img.height * scale) / 2;
+      const x = (canvasSize.width / zoom - img.width * scale) / 2;
+      const y = (canvasSize.height / zoom - img.height * scale) / 2;
       
       ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
       ctx.globalAlpha = 1;
-    }
-    
-    // Draw grid
-    if (showGrid) {
-      drawGrid(ctx);
     }
     
     // Draw edges
@@ -86,29 +135,51 @@ const Canvas = ({
     
     // Draw temporary edge while drawing
     if (isDrawing && drawingFrom) {
-      drawTempEdge(ctx, drawingFrom, mousePos);
+      const canvasMousePos = screenToCanvas(mousePos.x, mousePos.y);
+      drawTempEdge(ctx, drawingFrom, canvasMousePos);
     }
     
     // Draw nodes
     nodes.forEach(node => {
       drawNode(ctx, node, node.id === selectedNode?.id);
     });
+
+    ctx.restore();
   };
 
   useEffect(() => {
     redrawCanvas();
-  }, [nodes, edges, selectedNode, isDrawing, drawingFrom, mousePos, showGrid, showDistances, imageOpacity]);
+  }, [
+    nodes, 
+    edges, 
+    selectedNode, 
+    isDrawing, 
+    drawingFrom, 
+    mousePos, 
+    showGrid, 
+    showDistances, 
+    imageOpacity,
+    zoom,
+    offset
+  ]);
 
   const drawGrid = (ctx) => {
-    ctx.fillStyle = 'var(--grid)';
+    if (!showGrid || !gridPatternRef.current) return;
     
-    for (let x = 0; x <= canvasSize.width; x += gridSize) {
-      for (let y = 0; y <= canvasSize.height; y += gridSize) {
-        ctx.beginPath();
-        ctx.arc(x, y, 0.5, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-    }
+    const pattern = gridPatternRef.current;
+    
+    // Adjust pattern offset based on pan position
+    const patternOffset = {
+      x: offset.x % (gridSize * zoom),
+      y: offset.y % (gridSize * zoom)
+    };
+    
+    ctx.save();
+    ctx.resetTransform(); // Reset the transform to draw grid in screen space
+    ctx.fillStyle = pattern;
+    ctx.translate(patternOffset.x, patternOffset.y);
+    ctx.fillRect(-patternOffset.x, -patternOffset.y, canvasSize.width, canvasSize.height);
+    ctx.restore();
   };
 
   const drawNode = (ctx, node, isSelected) => {
@@ -173,18 +244,46 @@ const Canvas = ({
     ctx.fillText(Math.round(distance), midX, midY - 5);
   };
 
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const rect = canvasRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Calculate zoom
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.min(Math.max(zoom * zoomFactor, 0.1), 5);
+
+    // Adjust offset to zoom toward mouse position
+    const newOffset = {
+      x: mouseX - (mouseX - offset.x) * (newZoom / zoom),
+      y: mouseY - (mouseY - offset.y) * (newZoom / zoom)
+    };
+
+    setZoom(newZoom);
+    setOffset(newOffset);
+    // Immediately redraw after zoom changes
+    requestAnimationFrame(redrawCanvas);
+  };
+
   const handleMouseDown = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
-    let x = e.clientX - rect.left;
-    let y = e.clientY - rect.top;
+    const screenX = e.clientX - rect.left;
+    const screenY = e.clientY - rect.top;
     
-    if (snapToGrid) {
-      x = snapToGridHelper(x, gridSize);
-      y = snapToGridHelper(y, gridSize);
+    // Middle mouse button or Space + Left click for panning
+    if (e.button === 1 || (e.button === 0 && e.getModifierState('Space'))) {
+      setIsPanning(true);
+      setLastPanPoint({ x: screenX, y: screenY });
+      return;
     }
 
+    const { x, y } = screenToCanvas(screenX, screenY);
+    const snappedX = snapToGrid ? snapToGridHelper(x, gridSize) : x;
+    const snappedY = snapToGrid ? snapToGridHelper(y, gridSize) : y;
+
     const clickedNode = nodes.find(node => 
-      Math.hypot(node.x - x, node.y - y) < 15
+      Math.hypot(node.x - snappedX, node.y - snappedY) < 15 / zoom
     );
 
     if (clickedNode) {
@@ -216,20 +315,31 @@ const Canvas = ({
 
   const handleMouseMove = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
-    let x = e.clientX - rect.left;
-    let y = e.clientY - rect.top;
-    
-    if (snapToGrid) {
-      x = snapToGridHelper(x, gridSize);
-      y = snapToGridHelper(y, gridSize);
+    const screenX = e.clientX - rect.left;
+    const screenY = e.clientY - rect.top;
+
+    if (isPanning && lastPanPoint) {
+      const dx = screenX - lastPanPoint.x;
+      const dy = screenY - lastPanPoint.y;
+      setOffset({
+        x: offset.x + dx,
+        y: offset.y + dy
+      });
+      setLastPanPoint({ x: screenX, y: screenY });
+      requestAnimationFrame(redrawCanvas);
+      return;
     }
+
+    const { x, y } = screenToCanvas(screenX, screenY);
+    const snappedX = snapToGrid ? snapToGridHelper(x, gridSize) : x;
+    const snappedY = snapToGrid ? snapToGridHelper(y, gridSize) : y;
     
-    setMousePos({ x, y });
+    setMousePos({ x: snappedX, y: snappedY });
 
     if (isDragging && draggedNode && editorMode === 'node') {
       const updatedNodes = nodes.map(node => 
         node.id === draggedNode.id 
-          ? { ...node, x, y }
+          ? { ...node, x: snappedX, y: snappedY }
           : node
       );
       setNodes(updatedNodes);
@@ -237,6 +347,10 @@ const Canvas = ({
   };
 
   const handleMouseUp = () => {
+    if (isPanning) {
+      setIsPanning(false);
+      setLastPanPoint(null);
+    }
     if (isDragging && draggedNode) {
       saveToHistory({ nodes, edges });
       setIsDragging(false);
@@ -253,7 +367,9 @@ const Canvas = ({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onWheel={handleWheel}
       className="absolute inset-0"
+      style={{ cursor: isPanning ? 'grab' : 'default' }}
     />
   );
 };
