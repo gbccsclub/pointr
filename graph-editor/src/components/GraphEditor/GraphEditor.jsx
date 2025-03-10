@@ -14,7 +14,7 @@ const GraphEditor = () => {
   const [selectedEdge, setSelectedEdge] = useState(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingFrom, setDrawingFrom] = useState(null);
-  const [gridSize, setGridSize] = useState(15);
+  const [gridSize, setGridSize] = useState(10);
   const [showGrid, setShowGrid] = useState(true);
   const [showDistances, setShowDistances] = useState(true);
   const [snapToGrid, setSnapToGrid] = useState(true);
