@@ -26,6 +26,9 @@ const Canvas = ({
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  // Add new state for dragging
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedNode, setDraggedNode] = useState(null);
   const { createNode, snapToGridHelper, calculateEdgeDistance } = useGraphOperations();
 
   useEffect(() => {
@@ -112,10 +115,9 @@ const Canvas = ({
     // Reduce radius from 10 to 6
     const radius = 6;
     
-    // Get the computed style to access CSS variables
-    const computedStyle = getComputedStyle(document.documentElement);
-    const primaryColor = computedStyle.getPropertyValue('--primary').trim();
-    const accentColor = computedStyle.getPropertyValue('--accent').trim();
+    // Use explicit colors instead of CSS variables
+    const primaryBlue = '#2563eb';     // Default node color
+    const selectBlue = '#60a5fa';      // Light blue for selection
     
     // Draw main circle
     ctx.beginPath();
@@ -124,12 +126,12 @@ const Canvas = ({
     // Use primary blue for fill and add subtle shadow
     ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
     ctx.shadowBlur = 4;
-    ctx.fillStyle = '#2563eb'; // Explicit primary blue color
+    ctx.fillStyle = primaryBlue;
     ctx.fill();
     
     // Draw border with selection indicator
     ctx.shadowColor = 'transparent';
-    ctx.strokeStyle = isSelected ? '#22c55e' : '#2563eb'; // Explicit colors
+    ctx.strokeStyle = isSelected ? selectBlue : primaryBlue;
     ctx.lineWidth = 1.5;
     ctx.stroke();
     
@@ -144,7 +146,7 @@ const Canvas = ({
     ctx.beginPath();
     ctx.moveTo(fromNode.x, fromNode.y);
     ctx.lineTo(toNode.x, toNode.y);
-    ctx.strokeStyle = 'var(--edge)';
+    ctx.strokeStyle = '#93c5fd';  // Changed to light blue
     ctx.lineWidth = 2;
     ctx.stroke();
   };
@@ -153,7 +155,7 @@ const Canvas = ({
     ctx.beginPath();
     ctx.moveTo(fromNode.x, fromNode.y);
     ctx.lineTo(toPos.x, toPos.y);
-    ctx.strokeStyle = '#999';
+    ctx.strokeStyle = '#60a5fa';  // Light blue for temp edge
     ctx.lineWidth = 1;
     ctx.setLineDash([5, 5]);
     ctx.stroke();
@@ -187,13 +189,15 @@ const Canvas = ({
 
     if (clickedNode) {
       if (editorMode === 'edge' && isDrawing && drawingFrom) {
-        // If we're drawing an edge and click a second node, create the edge
         if (clickedNode.id !== drawingFrom.id) {
           onEdgeCreate(drawingFrom, clickedNode);
         }
-        // Reset drawing state
         setIsDrawing(false);
         setDrawingFrom(null);
+      } else if (editorMode === 'node') {
+        setSelectedNode(clickedNode);
+        setIsDragging(true);
+        setDraggedNode(clickedNode);
       } else {
         setSelectedNode(clickedNode);
         if (editorMode === 'edge') {
@@ -207,10 +211,6 @@ const Canvas = ({
       setNodes(updatedNodes);
       setSelectedNode(newNode);
       saveToHistory({ nodes: updatedNodes, edges });
-    } else {
-      // Click on empty space while in edge mode - clear drawing state
-      setIsDrawing(false);
-      setDrawingFrom(null);
     }
   };
 
@@ -225,6 +225,23 @@ const Canvas = ({
     }
     
     setMousePos({ x, y });
+
+    if (isDragging && draggedNode && editorMode === 'node') {
+      const updatedNodes = nodes.map(node => 
+        node.id === draggedNode.id 
+          ? { ...node, x, y }
+          : node
+      );
+      setNodes(updatedNodes);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (isDragging && draggedNode) {
+      saveToHistory({ nodes, edges });
+      setIsDragging(false);
+      setDraggedNode(null);
+    }
   };
 
   return (
@@ -234,6 +251,8 @@ const Canvas = ({
       height={canvasSize.height}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
       className="absolute inset-0"
     />
   );

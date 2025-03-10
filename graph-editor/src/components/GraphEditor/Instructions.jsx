@@ -10,7 +10,10 @@ const Instructions = ({ nodes, edges, gridSize, selectedNode, editorMode }) => {
       <ul className="space-y-0.5 text-slate-600 mb-1">
         <li>• Mode: {editorMode === 'node' ? 'Create Nodes' : 'Create Edges'}</li>
         {editorMode === 'node' ? (
-          <li>• Click to create node</li>
+          <>
+            <li>• Click to create node</li>
+            <li>• Drag to move node</li>
+          </>
         ) : (
           <li>• Click nodes to connect</li>
         )}
