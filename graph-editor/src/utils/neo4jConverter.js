@@ -69,7 +69,7 @@ export const convertToNeo4j = (nodes, edges) => {
     if (fromNode.type === 'pathNode' && toNode.type === 'pathNode') {
       return [
         `CREATE (${fromPrefix}${fromId})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(${toPrefix}${toId})`,
-        `CREATE (${toPrefix}${toId})-[:CONNECTS_TO {angle: ${reverseAngle}, distance: ${distance}}]->(${fromPrefix}${fromId})`
+        `CREATE (${fromPrefix}${fromId})<-[:CONNECTS_TO {angle: ${reverseAngle}, distance: ${distance}}]-(${toPrefix}${toId})`
       ].join('\n');
     }
     
