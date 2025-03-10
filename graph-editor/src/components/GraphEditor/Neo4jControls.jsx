@@ -31,11 +31,12 @@ const Neo4jControls = ({ nodes, edges, onImport }) => {
 
   const handleImport = () => {
     try {
-      const { nodes: importedNodes, edges: importedEdges } = parseCypherImport(cypherQuery);
-      onImport(importedNodes, importedEdges);
+      const { nodes: importedNodes, edges: importedEdges, nodeCounter, roomCounter } = parseCypherImport(cypherQuery);
+      onImport(importedNodes, importedEdges, nodeCounter, roomCounter);
       setIsOpen(false);
       setCypherQuery('');
     } catch (error) {
+      console.error('Import error:', error);
       alert('Invalid Cypher format');
     }
   };
