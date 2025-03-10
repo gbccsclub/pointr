@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const Instructions = ({ nodes, edges, gridSize, selectedNode, selectedEdge, editorMode }) => {
+  const [isVisible, setIsVisible] = useState(true);
+
   const getModeInstructions = () => {
     if (editorMode === 'node') {
       return (
@@ -26,24 +28,42 @@ const Instructions = ({ nodes, edges, gridSize, selectedNode, selectedEdge, edit
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-xs w-48">
-      <div className="flex justify-between items-center mb-1.5">
+    <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-xs w-56">
+      <div className="flex items-center gap-2 mb-1.5">
         <span className="font-medium text-slate-700">Instructions</span>
-        <span className="text-slate-500">{nodes.length} nodes, {edges.length} edges</span>
+        <span className="text-slate-500 text-[10px]">({nodes.length} nodes, {edges.length} edges)</span>
+        <button
+          onClick={() => setIsVisible(!isVisible)}
+          className="ml-auto p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+          title={isVisible ? "Hide instructions" : "Show instructions"}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {isVisible ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            )}
+          </svg>
+        </button>
       </div>
-      <ul className="space-y-0.5 text-slate-600 mb-1">
-        {getModeInstructions()}
-        <li className="mt-1">• Ctrl+Z to undo</li>
-      </ul>
-      {selectedNode && (
-        <div className="text-slate-500">
-          Selected: Node {selectedNode.label} ({selectedNode.x}, {selectedNode.y})
-        </div>
-      )}
-      {selectedEdge && (
-        <div className="text-slate-500">
-          Selected: Edge {selectedEdge.id}
-        </div>
+      
+      {isVisible && (
+        <>
+          <ul className="space-y-0.5 text-slate-600 mb-1">
+            {getModeInstructions()}
+            <li className="mt-1">• Ctrl+Z to undo</li>
+          </ul>
+          {selectedNode && (
+            <div className="text-slate-500">
+              Selected: Node {selectedNode.label} ({selectedNode.x}, {selectedNode.y})
+            </div>
+          )}
+          {selectedEdge && (
+            <div className="text-slate-500">
+              Selected: Edge {selectedEdge.id}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
