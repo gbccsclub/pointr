@@ -392,35 +392,36 @@ const Canvas = ({
         }
         setIsDrawing(false);
         setDrawingFrom(null);
-      } else if (editorMode === 'pathNode' || editorMode === 'roomNode') {
+      } else if (editorMode === 'select') {
         setSelectedNode(clickedNode);
         setIsDragging(true);
         setDraggedNode(clickedNode);
-      } else {
-        setSelectedNode(clickedNode);
-        if (editorMode === 'edge') {
-          setIsDrawing(true);
-          setDrawingFrom(clickedNode);
-        }
+      } else if (editorMode === 'edge') {
+        setIsDrawing(true);
+        setDrawingFrom(clickedNode);
       }
       setSelectedEdge(null);
       e.stopPropagation();
       return;
     }
 
-    // Check for edge clicks
-    const clickedEdge = edges.find(edge => isPointOnEdge(clickPoint, edge));
-    
-    if (clickedEdge) {
-      setSelectedEdge(clickedEdge);
-      setSelectedNode(null);
-      e.stopPropagation();
-      return;
+    // Check for edge clicks only in select mode
+    if (editorMode === 'select') {
+      const clickedEdge = edges.find(edge => isPointOnEdge(clickPoint, edge));
+      if (clickedEdge) {
+        setSelectedEdge(clickedEdge);
+        setSelectedNode(null);
+        e.stopPropagation();
+        return;
+      }
     }
 
-    // If nothing was clicked, clear selections
-    setSelectedNode(null);
-    setSelectedEdge(null);
+    // Clear selections in select mode when clicking empty space
+    if (editorMode === 'select') {
+      setSelectedNode(null);
+      setSelectedEdge(null);
+      return;
+    }
 
     // Create new node based on mode
     if (editorMode === 'pathNode' || editorMode === 'roomNode') {
@@ -430,7 +431,6 @@ const Canvas = ({
       
       const updatedNodes = [...nodes, newNode];
       setNodes(updatedNodes);
-      setSelectedNode(newNode);
       saveToHistory({ nodes: updatedNodes, edges });
       
       if (editorMode === 'pathNode') {
@@ -463,25 +463,44 @@ const Canvas = ({
     
     setMousePos({ x: snappedX, y: snappedY });
 
-    if (isDragging && draggedNode && (editorMode === 'pathNode' || editorMode === 'roomNode')) {
+    // Only allow node dragging in select mode
+    if (isDragging && draggedNode && editorMode === 'select') {
       const updatedNodes = nodes.map(node => 
         node.id === draggedNode.id 
           ? { ...node, x: snappedX, y: snappedY }
           : node
       );
       setNodes(updatedNodes);
+      requestAnimationFrame(redrawCanvas);
+    }
+
+    // Handle edge drawing preview
+    if (isDrawing && drawingFrom) {
+      requestAnimationFrame(redrawCanvas);
     }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
     if (isPanning) {
       setIsPanning(false);
       setLastPanPoint(null);
+      return;
     }
-    if (isDragging && draggedNode) {
+
+    if (isDragging && draggedNode && editorMode === 'select') {
+      // Save the final position to history
       saveToHistory({ nodes, edges });
-      setIsDragging(false);
-      setDraggedNode(null);
+    }
+
+    setIsDragging(false);
+    setDraggedNode(null);
+
+    if (isDrawing && !draggedNode) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      const { x, y } = screenToCanvas(
+        e.clientX - rect.left,
+        e.clientY - rect.top
+      );
     }
   };
 

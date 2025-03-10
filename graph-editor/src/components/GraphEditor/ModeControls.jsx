@@ -1,6 +1,11 @@
 import React from 'react';
 
 const Icons = {
+  Select: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" />
+    </svg>
+  ),
   PathNode: () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="3" strokeWidth={2} />
@@ -32,6 +37,15 @@ const ModeControls = ({ editorMode, onModeChange }) => {
 
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-1.5 flex flex-col gap-1.5">
+      <button
+        onClick={() => onModeChange('select')}
+        disabled={editorMode === 'select'}
+        className={buttonClass('select')}
+        title="Select Mode (V)"
+      >
+        <Icons.Select />
+      </button>
+
       <button
         onClick={() => onModeChange('pathNode')}
         disabled={editorMode === 'pathNode'}

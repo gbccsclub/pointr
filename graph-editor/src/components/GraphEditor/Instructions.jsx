@@ -4,26 +4,41 @@ const Instructions = ({ nodes, edges, gridSize, selectedNode, selectedEdge, edit
   const [isVisible, setIsVisible] = useState(true);
 
   const getModeInstructions = () => {
-    if (editorMode === 'node') {
-      return (
-        <>
-          <li className="font-medium text-blue-600">Create Node Mode</li>
-          <li>• Click empty space to create node</li>
-          <li>• Click + drag to move existing nodes</li>
-          <li>• Click node to select</li>
-          <li>• Del to remove selected node</li>
-        </>
-      );
-    } else {
-      return (
-        <>
-          <li className="font-medium text-blue-600">Create Edge Mode</li>
-          <li>• Click first node to start edge</li>
-          <li>• Click second node to complete</li>
-          <li>• Click edge to select</li>
-          <li>• Del to remove selected edge</li>
-        </>
-      );
+    switch (editorMode) {
+      case 'select':
+        return (
+          <>
+            <li className="font-medium text-blue-600">Select Mode</li>
+            <li>• Click to select nodes/edges</li>
+            <li>• Click + drag to move nodes</li>
+            <li>• Del to remove selected</li>
+            <li>• Click empty space to deselect</li>
+          </>
+        );
+      case 'pathNode':
+        return (
+          <>
+            <li className="font-medium text-blue-600">Create Path Node Mode</li>
+            <li>• Click empty space to create node</li>
+          </>
+        );
+      case 'roomNode':
+        return (
+          <>
+            <li className="font-medium text-blue-600">Create Room Node Mode</li>
+            <li>• Click empty space to create node</li>
+          </>
+        );
+      case 'edge':
+        return (
+          <>
+            <li className="font-medium text-blue-600">Create Edge Mode</li>
+            <li>• Click first node to start edge</li>
+            <li>• Click second node to complete</li>
+          </>
+        );
+      default:
+        return null;
     }
   };
 

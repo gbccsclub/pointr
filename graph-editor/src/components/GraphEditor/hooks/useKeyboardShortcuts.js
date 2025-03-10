@@ -31,6 +31,10 @@ export const useKeyboardShortcuts = ({
 
       // Mode switching shortcuts
       switch (event.key.toLowerCase()) {
+        case 'v':
+          event.preventDefault();
+          setEditorMode('select');
+          break;
         case 'p':
           event.preventDefault();
           setEditorMode('pathNode');
