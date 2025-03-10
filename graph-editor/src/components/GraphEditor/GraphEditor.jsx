@@ -4,14 +4,92 @@ import GridControls from './GridControls';
 import Canvas from './Canvas';
 import ImageOverlay from './ImageOverlay';
 import Instructions from './Instructions';
+import WorkspaceManager from './WorkspaceManager';
+import ModeControls from './ModeControls';
 import { useGraphHistory } from './hooks/useGraphHistory';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { 
+  saveToWorkspace, 
+  loadFromWorkspace, 
+  saveWorkspaceList, 
+  loadWorkspaceList,
+  saveCurrentWorkspace,
+  STORAGE_KEYS 
+} from '../../utils/storage';
 
 const GraphEditor = () => {
+  // Workspace state
+  const [workspaces, setWorkspaces] = useState(loadWorkspaceList());
+  const [currentWorkspace, setCurrentWorkspace] = useState(null);
+  
+  // Graph state
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [selectedEdge, setSelectedEdge] = useState(null);
+  const [overlayImage, setOverlayImage] = useState(null);
+  const [imageOpacity, setImageOpacity] = useState(0.5);
+  const [nodeCounter, setNodeCounter] = useState(0);
+  
+  // Load current workspace on mount
+  useEffect(() => {
+    const savedWorkspaceId = localStorage.getItem(STORAGE_KEYS.CURRENT_WORKSPACE);
+    if (savedWorkspaceId && workspaces.find(w => w.id === savedWorkspaceId)) {
+      handleWorkspaceChange(savedWorkspaceId);
+    } else if (workspaces.length > 0) {
+      handleWorkspaceChange(workspaces[0].id);
+    } else {
+      // Create default workspace if none exists
+      handleWorkspaceCreate('Default Workspace');
+    }
+  }, []);
+
+  const handleWorkspaceChange = (workspaceId) => {
+    const workspace = workspaces.find(w => w.id === workspaceId);
+    if (workspace) {
+      const data = loadFromWorkspace(workspaceId);
+      setNodes(data.nodes);
+      setEdges(data.edges);
+      setOverlayImage(data.overlayImage);
+      setImageOpacity(data.imageOpacity);
+      setNodeCounter(data.nodeCounter);
+      setCurrentWorkspace(workspace);
+      saveCurrentWorkspace(workspaceId);
+    }
+  };
+
+  const handleWorkspaceCreate = (name) => {
+    const newWorkspace = {
+      id: `workspace-${Date.now()}`,
+      name,
+      created: Date.now()
+    };
+    
+    const updatedWorkspaces = [...workspaces, newWorkspace];
+    setWorkspaces(updatedWorkspaces);
+    saveWorkspaceList(updatedWorkspaces);
+    handleWorkspaceChange(newWorkspace.id);
+  };
+
+  const handleWorkspaceDelete = (workspaceId) => {
+    // Remove workspace data
+    const workspaceKey = `graph-editor-workspace-${workspaceId}`;
+    localStorage.removeItem(workspaceKey);
+    
+    // Update workspaces list
+    const updatedWorkspaces = workspaces.filter(w => w.id !== workspaceId);
+    setWorkspaces(updatedWorkspaces);
+    saveWorkspaceList(updatedWorkspaces);
+
+    // Switch to another workspace
+    if (updatedWorkspaces.length > 0) {
+      handleWorkspaceChange(updatedWorkspaces[0].id);
+    } else {
+      // Create a new default workspace if none exists
+      handleWorkspaceCreate('Default Workspace');
+    }
+  };
+
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingFrom, setDrawingFrom] = useState(null);
   const [gridSize, setGridSize] = useState(10);
@@ -19,10 +97,8 @@ const GraphEditor = () => {
   const [showDistances, setShowDistances] = useState(true);
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
-  const [overlayImage, setOverlayImage] = useState(null);
-  const [imageOpacity, setImageOpacity] = useState(0.5);
-  const [editorMode, setEditorMode] = useState('node'); // 'node' or 'edge'
-  const [nodeSize, setNodeSize] = useState(6); // 6 is the current default size
+  const [editorMode, setEditorMode] = useState('select');  // Change default mode to select
+  const [nodeSize, setNodeSize] = useState(3);
 
   const { history, currentStateIndex, saveToHistory, handleUndo, canUndo } = useGraphHistory();
 
@@ -75,7 +151,8 @@ const GraphEditor = () => {
     selectedEdge,
     handleUndo: handleUndoAction,
     handleDeleteNode,
-    handleDeleteEdge
+    handleDeleteEdge,
+    setEditorMode
   });
 
   const handleNodeSelect = (node) => {
@@ -106,14 +183,9 @@ const GraphEditor = () => {
     }
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => setOverlayImage(e.target.result);
-      reader.readAsDataURL(file);
-    }
-  };
+  const handleImageUpload = useCallback((imageData) => {
+    setOverlayImage(imageData);
+  }, []);
 
   const handleImageToggle = (show) => {
     setImageOpacity(show ? 0.5 : 0);
@@ -126,7 +198,26 @@ const GraphEditor = () => {
     setIsDrawing(false);
     setDrawingFrom(null);
     saveToHistory({ nodes: importedNodes, edges: importedEdges });
+    // Storage will be handled by the effect
   }, [saveToHistory]);
+
+  // Add debounced save effect
+  useEffect(() => {
+    if (currentWorkspace) {
+      const saveTimeout = setTimeout(() => {
+        saveToWorkspace(
+          currentWorkspace.id,
+          nodes,
+          edges,
+          overlayImage,
+          imageOpacity,
+          nodeCounter // Pass the current nodeCounter
+        );
+      }, 1000);
+
+      return () => clearTimeout(saveTimeout);
+    }
+  }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity, nodeCounter]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -137,8 +228,34 @@ const GraphEditor = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Add this function to handle node counter changes
+  const handleNodeCounterChange = useCallback((newCounter) => {
+    setNodeCounter(newCounter);
+    if (currentWorkspace) {
+      saveToWorkspace(
+        currentWorkspace.id,
+        nodes,
+        edges,
+        overlayImage,
+        imageOpacity,
+        newCounter
+      );
+    }
+  }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity]);
+
   return (
     <div className="fixed inset-0 overflow-hidden">
+      {/* Add WorkspaceManager to the top */}
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+        <WorkspaceManager
+          workspaces={workspaces}
+          currentWorkspace={currentWorkspace}
+          onWorkspaceChange={handleWorkspaceChange}
+          onWorkspaceCreate={handleWorkspaceCreate}
+          onWorkspaceDelete={handleWorkspaceDelete}
+        />
+      </div>
+
       {/* Top controls container */}
       <div className="fixed top-4 left-4 z-50">
         <Controls 
@@ -156,6 +273,12 @@ const GraphEditor = () => {
           nodes={nodes}
           edges={edges}
           onImport={handleNeo4jImport}
+        />
+      </div>
+
+      {/* Mode controls container */}
+      <div className="fixed top-20 left-4 z-50">
+        <ModeControls 
           editorMode={editorMode}
           onModeChange={setEditorMode}
         />
@@ -184,6 +307,8 @@ const GraphEditor = () => {
           edges={edges}
           gridSize={gridSize}
           selectedNode={selectedNode}
+          selectedEdge={selectedEdge}
+          editorMode={editorMode}
         />
       </div>
 
@@ -212,6 +337,8 @@ const GraphEditor = () => {
         selectedEdge={selectedEdge}
         setSelectedEdge={setSelectedEdge}
         nodeSize={nodeSize}
+        initialNodeCounter={nodeCounter}
+        onNodeCounterChange={handleNodeCounterChange}
       />
     </div>
   );

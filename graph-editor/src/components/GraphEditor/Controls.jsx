@@ -8,14 +8,23 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
     </svg>
   ),
-  Node: () => (
+  Create: () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="6" strokeWidth={2} />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
     </svg>
   ),
-  Edge: () => (
+  Connect: () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12h16m-7-7l7 7-7 7" />
+      <g transform="rotate(45, 12, 12)">
+        <circle cx="6" cy="12" r="3" strokeWidth={2} />
+        <circle cx="18" cy="12" r="3" strokeWidth={2} />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6" />
+      </g>
+    </svg>
+  ),
+  Room: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
     </svg>
   ),
   Delete: () => (
@@ -51,9 +60,19 @@ const Controls = ({
   nodes,
   edges,
   onImport,
-  editorMode,
-  onModeChange
 }) => {
+  const handleImageInputChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        onImageUpload(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-xs">
       <div className="flex items-center gap-2">
@@ -70,14 +89,6 @@ const Controls = ({
             title="Undo (Ctrl+Z)"
           >
             <Icons.Undo />
-          </button>
-
-          <button
-            onClick={() => onModeChange(editorMode === 'node' ? 'edge' : 'node')}
-            className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
-            title={editorMode === 'node' ? 'Switch to Edge Mode' : 'Switch to Node Mode'}
-          >
-            {editorMode === 'node' ? <Icons.Node /> : <Icons.Edge />}
           </button>
 
           {(selectedNode || selectedEdge) && (
@@ -107,7 +118,7 @@ const Controls = ({
             <input
               type="file"
               accept="image/*"
-              onChange={onImageUpload}
+              onChange={handleImageInputChange}
               className="hidden"
             />
           </label>
@@ -130,7 +141,7 @@ const Controls = ({
                 max="1"
                 step="0.1"
                 value={opacity}
-                onChange={(e) => onOpacityChange(e.target.value)}
+                onChange={(e) => onOpacityChange(parseFloat(e.target.value))}
                 className="w-16 h-2 accent-blue-600"
                 title="Adjust Opacity"
               />
@@ -140,6 +151,8 @@ const Controls = ({
             </>
           )}
         </div>
+        
+        {/* Remove clear data button and its divider */}
       </div>
     </div>
   );

@@ -24,7 +24,9 @@ const Canvas = ({
   editorMode,
   selectedEdge,
   setSelectedEdge,
-  nodeSize, // Add nodeSize prop
+  nodeSize,
+  onNodeCounterChange,
+  initialNodeCounter = 0
 }) => {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
@@ -34,13 +36,32 @@ const Canvas = ({
   const [isDragging, setIsDragging] = useState(false);
   const [draggedNode, setDraggedNode] = useState(null);
   
-  // Add new state for canvas manipulation
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [lastPanPoint, setLastPanPoint] = useState(null);
 
-  const { createNode, snapToGridHelper, calculateEdgeDistance } = useGraphOperations();
+  const { 
+    createPathNode, 
+    createRoomNode,
+    snapToGridHelper, 
+    calculateEdgeDistance, 
+    getCurrentNodeCounter, 
+    setNodeCounter 
+  } = useGraphOperations(
+    Number(initialNodeCounter), // Ensure it's a number
+    onNodeCounterChange
+  );
+
+  // Add effect to handle node counter initialization
+  useEffect(() => {
+    const counter = Number(initialNodeCounter);
+    if (!isNaN(counter)) {
+      setNodeCounter(counter);
+    } else {
+      setNodeCounter(0);
+    }
+  }, [initialNodeCounter, setNodeCounter]);
 
   // Convert screen coordinates to canvas coordinates
   const screenToCanvas = (screenX, screenY) => {
@@ -64,6 +85,11 @@ const Canvas = ({
       img.src = overlayImage;
       img.onload = () => {
         imageRef.current = img;
+        redrawCanvas();
+      };
+      img.onerror = () => {
+        console.error('Failed to load overlay image');
+        imageRef.current = null;
         redrawCanvas();
       };
     } else {
@@ -125,19 +151,12 @@ const Canvas = ({
       const scaledWidth = img.width * baseScale;
       const scaledHeight = img.height * baseScale;
       
-      // Position image at (0,0) in canvas space
+      // Position image at center
       const x = -scaledWidth / 2;
       const y = -scaledHeight / 2;
       
       // Draw the image
-      ctx.drawImage(
-        img,
-        x,
-        y,
-        scaledWidth,
-        scaledHeight
-      );
-      
+      ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
       ctx.globalAlpha = 1;
     }
     
@@ -208,33 +227,43 @@ const Canvas = ({
   };
 
   const drawNode = (ctx, node, isSelected) => {
-    const radius = nodeSize; // Use the nodeSize prop instead of hardcoded value
+    const radius = nodeSize;
     
-    // Use explicit colors instead of CSS variables
-    const primaryBlue = '#2563eb';     // Default node color
-    const selectBlue = '#60a5fa';      // Light blue for selection
+    // Colors for different node types
+    const colors = {
+      pathNode: {
+        fill: '#2563eb',     // Blue for path nodes
+        selected: '#60a5fa'   // Light blue for selected path nodes
+      },
+      roomNode: {
+        fill: '#f43f5e',     // Light pinkish red for room nodes
+        selected: '#fb7185'   // Lighter pinkish red for selected room nodes
+      }
+    };
+    
+    const nodeColors = colors[node.type];
     
     // Draw main circle
     ctx.beginPath();
     ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
     
-    // Use primary blue for fill and add subtle shadow
+    // Use node type specific colors and add subtle shadow
     ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
     ctx.shadowBlur = 4;
-    ctx.fillStyle = primaryBlue;
+    ctx.fillStyle = nodeColors.fill;
     ctx.fill();
     
     // Draw border with selection indicator
     ctx.shadowColor = 'transparent';
-    ctx.strokeStyle = isSelected ? selectBlue : primaryBlue;
+    ctx.strokeStyle = isSelected ? nodeColors.selected : nodeColors.fill;
     ctx.lineWidth = 1.5;
     ctx.stroke();
     
     // Draw label with slight offset for better readability
-    ctx.fillStyle = '#1e293b'; // Text color
+    ctx.fillStyle = '#1e293b';
     ctx.font = '11px system-ui';
     ctx.textAlign = 'center';
-    ctx.fillText(node.label, node.x, node.y + (radius + 12)); // Adjust label position based on node size
+    ctx.fillText(node.label, node.x, node.y + (radius + 12));
   };
 
   const drawEdge = (ctx, fromNode, toNode, edge) => {
@@ -242,12 +271,15 @@ const Canvas = ({
     ctx.moveTo(fromNode.x, fromNode.y);
     ctx.lineTo(toNode.x, toNode.y);
     
-    // Highlight selected edge
+    // Determine edge color based on connected nodes
+    const isRoomConnection = fromNode.type === 'roomNode' || toNode.type === 'roomNode';
+    
+    // Highlight selected edge or use appropriate color based on connection type
     if (selectedEdge && edge.id === selectedEdge.id) {
-      ctx.strokeStyle = '#60a5fa';  // Light blue for selected edge
+      ctx.strokeStyle = isRoomConnection ? '#fb7185' : '#60a5fa';  // Light pinkish red/blue for selected edge
       ctx.lineWidth = 3;
     } else {
-      ctx.strokeStyle = '#93c5fd';  // Default light blue
+      ctx.strokeStyle = isRoomConnection ? '#fda4af' : '#93c5fd';  // Lighter pinkish red/blue for normal edge
       ctx.lineWidth = 2;
     }
     
@@ -258,7 +290,7 @@ const Canvas = ({
     ctx.beginPath();
     ctx.moveTo(fromNode.x, fromNode.y);
     ctx.lineTo(toPos.x, toPos.y);
-    ctx.strokeStyle = '#60a5fa';  // Light blue for temp edge
+    ctx.strokeStyle = fromNode.type === 'roomNode' ? '#fda4af' : '#60a5fa';  // Light pinkish red/blue based on node type
     ctx.lineWidth = 1;
     ctx.setLineDash([5, 5]);
     ctx.stroke();
@@ -344,7 +376,6 @@ const Canvas = ({
     }
 
     const { x, y } = screenToCanvas(screenX, screenY);
-    // Apply snap to grid for initial coordinates
     const snappedX = snapToGrid ? snapToGridHelper(x, gridSize) : x;
     const snappedY = snapToGrid ? snapToGridHelper(y, gridSize) : y;
     const clickPoint = { x: snappedX, y: snappedY };
@@ -361,43 +392,50 @@ const Canvas = ({
         }
         setIsDrawing(false);
         setDrawingFrom(null);
-      } else if (editorMode === 'node') {
+      } else if (editorMode === 'select') {
         setSelectedNode(clickedNode);
         setIsDragging(true);
         setDraggedNode(clickedNode);
-      } else {
-        setSelectedNode(clickedNode);
-        if (editorMode === 'edge') {
-          setIsDrawing(true);
-          setDrawingFrom(clickedNode);
-        }
+      } else if (editorMode === 'edge') {
+        setIsDrawing(true);
+        setDrawingFrom(clickedNode);
       }
       setSelectedEdge(null);
       e.stopPropagation();
       return;
     }
 
-    // Check for edge clicks
-    const clickedEdge = edges.find(edge => isPointOnEdge(clickPoint, edge));
-    
-    if (clickedEdge) {
-      setSelectedEdge(clickedEdge);
+    // Check for edge clicks only in select mode
+    if (editorMode === 'select') {
+      const clickedEdge = edges.find(edge => isPointOnEdge(clickPoint, edge));
+      if (clickedEdge) {
+        setSelectedEdge(clickedEdge);
+        setSelectedNode(null);
+        e.stopPropagation();
+        return;
+      }
+    }
+
+    // Clear selections in select mode when clicking empty space
+    if (editorMode === 'select') {
       setSelectedNode(null);
-      e.stopPropagation();
+      setSelectedEdge(null);
       return;
     }
 
-    // If nothing was clicked, clear selections
-    setSelectedNode(null);
-    setSelectedEdge(null);
-
-    // Only create new node if in node mode and didn't click existing node
-    if (editorMode === 'node') {
-      const newNode = createNode(snappedX, snappedY);  // Use snapped coordinates
+    // Create new node based on mode
+    if (editorMode === 'pathNode' || editorMode === 'roomNode') {
+      const newNode = editorMode === 'pathNode' 
+        ? createPathNode(snappedX, snappedY)
+        : createRoomNode(snappedX, snappedY);
+      
       const updatedNodes = [...nodes, newNode];
       setNodes(updatedNodes);
-      setSelectedNode(newNode);
       saveToHistory({ nodes: updatedNodes, edges });
+      
+      if (editorMode === 'pathNode') {
+        onNodeCounterChange(getCurrentNodeCounter());
+      }
     }
   };
 
@@ -425,25 +463,44 @@ const Canvas = ({
     
     setMousePos({ x: snappedX, y: snappedY });
 
-    if (isDragging && draggedNode && editorMode === 'node') {
+    // Only allow node dragging in select mode
+    if (isDragging && draggedNode && editorMode === 'select') {
       const updatedNodes = nodes.map(node => 
         node.id === draggedNode.id 
           ? { ...node, x: snappedX, y: snappedY }
           : node
       );
       setNodes(updatedNodes);
+      requestAnimationFrame(redrawCanvas);
+    }
+
+    // Handle edge drawing preview
+    if (isDrawing && drawingFrom) {
+      requestAnimationFrame(redrawCanvas);
     }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
     if (isPanning) {
       setIsPanning(false);
       setLastPanPoint(null);
+      return;
     }
-    if (isDragging && draggedNode) {
+
+    if (isDragging && draggedNode && editorMode === 'select') {
+      // Save the final position to history
       saveToHistory({ nodes, edges });
-      setIsDragging(false);
-      setDraggedNode(null);
+    }
+
+    setIsDragging(false);
+    setDraggedNode(null);
+
+    if (isDrawing && !draggedNode) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      const { x, y } = screenToCanvas(
+        e.clientX - rect.left,
+        e.clientY - rect.top
+      );
     }
   };
 
@@ -473,6 +530,36 @@ const Canvas = ({
     }
   }, [overlayImage]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleWheelEvent = (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      // Calculate zoom
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.min(Math.max(zoom * zoomFactor, 0.1), 5);
+
+      // Adjust offset to zoom toward mouse position
+      const newOffset = {
+        x: mouseX - (mouseX - offset.x) * (newZoom / zoom),
+        y: mouseY - (mouseY - offset.y) * (newZoom / zoom)
+      };
+
+      setZoom(newZoom);
+      setOffset(newOffset);
+      // Immediately redraw after zoom changes
+      requestAnimationFrame(redrawCanvas);
+    };
+
+    canvas.addEventListener('wheel', handleWheelEvent, { passive: false });
+    return () => canvas.removeEventListener('wheel', handleWheelEvent);
+  }, [zoom, offset, redrawCanvas]);
+
   return (
     <canvas
       ref={canvasRef}
@@ -482,7 +569,6 @@ const Canvas = ({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      onWheel={handleWheel}
       className="absolute inset-0"
       style={{ cursor: isPanning ? 'grab' : 'default' }}
     />

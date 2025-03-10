@@ -1,6 +1,22 @@
 import React, { useState } from 'react';
 import { generateCypherExport, parseCypherImport } from '../../utils/neo4jConverter';
 
+// Add Icons object with Neo4j and Cancel icons
+const Icons = {
+  Neo4j: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7c0-2.21-3.582-4-8-4S4 4.79 4 7m16 0v10c0 2.21-3.582 4-8 4s-8-1.79-8-4V7" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12c0 2.21 3.582 4 8 4s8-1.79 8-4" />
+    </svg>
+  ),
+  Cancel: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  ),
+};
+
 const Neo4jControls = ({ nodes, edges, onImport }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [cypherQuery, setCypherQuery] = useState('');
@@ -40,9 +56,7 @@ const Neo4jControls = ({ nodes, edges, onImport }) => {
         className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
         title="Export/Import Neo4j"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2M8 4v4m0-4h8m-8 0l4 4m-4-4v12" />
-        </svg>
+        <Icons.Neo4j />
       </button>
 
       {isOpen && (
@@ -74,11 +88,10 @@ const Neo4jControls = ({ nodes, edges, onImport }) => {
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
+                className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"
+                title="Close"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <Icons.Cancel />
               </button>
             </div>
 

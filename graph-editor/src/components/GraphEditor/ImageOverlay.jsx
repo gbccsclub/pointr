@@ -5,7 +5,10 @@ const ImageOverlay = ({ image, opacity, onImageUpload, onOpacityChange }) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => onImageUpload(e.target.result);
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        onImageUpload(dataUrl);
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -29,7 +32,7 @@ const ImageOverlay = ({ image, opacity, onImageUpload, onOpacityChange }) => {
               max="1"
               step="0.1"
               value={opacity}
-              onChange={(e) => onOpacityChange(e.target.value)}
+              onChange={(e) => onOpacityChange(parseFloat(e.target.value))}
               className="w-32"
             />
           </div>
