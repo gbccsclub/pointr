@@ -4,18 +4,70 @@ import GridControls from './GridControls';
 import Canvas from './Canvas';
 import ImageOverlay from './ImageOverlay';
 import Instructions from './Instructions';
+import WorkspaceManager from './WorkspaceManager';
 import { useGraphHistory } from './hooks/useGraphHistory';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/storage';
+import { 
+  saveToWorkspace, 
+  loadFromWorkspace, 
+  saveWorkspaceList, 
+  loadWorkspaceList,
+  saveCurrentWorkspace,
+  STORAGE_KEYS 
+} from '../../utils/storage';
 
 const GraphEditor = () => {
-  // Load initial state from localStorage
-  const initialState = loadFromLocalStorage();
+  // Workspace state
+  const [workspaces, setWorkspaces] = useState(loadWorkspaceList());
+  const [currentWorkspace, setCurrentWorkspace] = useState(null);
   
-  const [nodes, setNodes] = useState(initialState.nodes);
-  const [edges, setEdges] = useState(initialState.edges);
+  // Graph state
+  const [nodes, setNodes] = useState([]);
+  const [edges, setEdges] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [selectedEdge, setSelectedEdge] = useState(null);
+  const [overlayImage, setOverlayImage] = useState(null);
+  const [imageOpacity, setImageOpacity] = useState(0.5);
+  
+  // Load current workspace on mount
+  useEffect(() => {
+    const savedWorkspaceId = localStorage.getItem(STORAGE_KEYS.CURRENT_WORKSPACE);
+    if (savedWorkspaceId && workspaces.find(w => w.id === savedWorkspaceId)) {
+      handleWorkspaceChange(savedWorkspaceId);
+    } else if (workspaces.length > 0) {
+      handleWorkspaceChange(workspaces[0].id);
+    } else {
+      // Create default workspace if none exists
+      handleWorkspaceCreate('Default Workspace');
+    }
+  }, []);
+
+  const handleWorkspaceChange = (workspaceId) => {
+    const workspace = workspaces.find(w => w.id === workspaceId);
+    if (workspace) {
+      const data = loadFromWorkspace(workspaceId);
+      setNodes(data.nodes);
+      setEdges(data.edges);
+      setOverlayImage(data.overlayImage);
+      setImageOpacity(data.imageOpacity);
+      setCurrentWorkspace(workspace);
+      saveCurrentWorkspace(workspaceId);
+    }
+  };
+
+  const handleWorkspaceCreate = (name) => {
+    const newWorkspace = {
+      id: `workspace-${Date.now()}`,
+      name,
+      created: Date.now()
+    };
+    
+    const updatedWorkspaces = [...workspaces, newWorkspace];
+    setWorkspaces(updatedWorkspaces);
+    saveWorkspaceList(updatedWorkspaces);
+    handleWorkspaceChange(newWorkspace.id);
+  };
+
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingFrom, setDrawingFrom] = useState(null);
   const [gridSize, setGridSize] = useState(10);
@@ -23,8 +75,6 @@ const GraphEditor = () => {
   const [showDistances, setShowDistances] = useState(true);
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
-  const [overlayImage, setOverlayImage] = useState(initialState.overlayImage);
-  const [imageOpacity, setImageOpacity] = useState(initialState.imageOpacity);
   const [editorMode, setEditorMode] = useState('node');
   const [nodeSize, setNodeSize] = useState(6);
 
@@ -130,31 +180,21 @@ const GraphEditor = () => {
 
   // Add debounced save effect
   useEffect(() => {
-    const saveTimeout = setTimeout(() => {
-      saveToLocalStorage(nodes, edges, overlayImage, imageOpacity, Math.max(...nodes.map(n => parseInt(n.id.replace('node-', ''), 10)), -1) + 1);
-    }, 1000); // Debounce for 1 second
+    if (currentWorkspace) {
+      const saveTimeout = setTimeout(() => {
+        saveToWorkspace(
+          currentWorkspace.id,
+          nodes,
+          edges,
+          overlayImage,
+          imageOpacity,
+          Math.max(...nodes.map(n => parseInt(n.id.replace('node-', ''), 10)), -1) + 1
+        );
+      }, 1000);
 
-    return () => clearTimeout(saveTimeout);
-  }, [nodes, edges, overlayImage, imageOpacity]);
-
-  const handleNodeCounterChange = (counter) => {
-    saveToLocalStorage(nodes, edges, overlayImage, imageOpacity, counter);
-  };
-
-  // Add clear data function
-  const handleClearData = useCallback(() => {
-    if (window.confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-      setNodes([]);
-      setEdges([]);
-      setOverlayImage(null);
-      setImageOpacity(0.5);
-      setSelectedNode(null);
-      setSelectedEdge(null);
-      setIsDrawing(false);
-      setDrawingFrom(null);
-      localStorage.clear();
+      return () => clearTimeout(saveTimeout);
     }
-  }, []);
+  }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -165,8 +205,32 @@ const GraphEditor = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Add this function to handle node counter changes
+  const handleNodeCounterChange = useCallback((newCounter) => {
+    if (currentWorkspace) {
+      saveToWorkspace(
+        currentWorkspace.id,
+        nodes,
+        edges,
+        overlayImage,
+        imageOpacity,
+        newCounter
+      );
+    }
+  }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity]);
+
   return (
     <div className="fixed inset-0 overflow-hidden">
+      {/* Add WorkspaceManager to the top */}
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+        <WorkspaceManager
+          workspaces={workspaces}
+          currentWorkspace={currentWorkspace}
+          onWorkspaceChange={handleWorkspaceChange}
+          onWorkspaceCreate={handleWorkspaceCreate}
+        />
+      </div>
+
       {/* Top controls container */}
       <div className="fixed top-4 left-4 z-50">
         <Controls 
@@ -186,7 +250,6 @@ const GraphEditor = () => {
           onImport={handleNeo4jImport}
           editorMode={editorMode}
           onModeChange={setEditorMode}
-          onClearData={handleClearData}
         />
       </div>
 

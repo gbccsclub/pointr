@@ -1,54 +1,63 @@
-const STORAGE_KEYS = {
-  GRAPH_DATA: 'graph-editor-data',
-  OVERLAY_IMAGE: 'graph-editor-overlay',
-  NODE_COUNTER: 'graph-editor-node-counter'
+// Export the STORAGE_KEYS constant
+export const STORAGE_KEYS = {
+  WORKSPACES: 'graph-editor-workspaces',
+  CURRENT_WORKSPACE: 'graph-editor-current-workspace'
 };
 
-export const saveToLocalStorage = (nodes, edges, overlayImage, imageOpacity, nodeCounter) => {
-  try {
-    // Save graph data
-    const graphData = {
-      nodes,
-      edges,
-      imageOpacity
-    };
-    localStorage.setItem(STORAGE_KEYS.GRAPH_DATA, JSON.stringify(graphData));
+const getWorkspaceKey = (workspaceId) => `graph-editor-workspace-${workspaceId}`;
 
-    // Save overlay image separately (if exists)
-    if (overlayImage) {
-      localStorage.setItem(STORAGE_KEYS.OVERLAY_IMAGE, overlayImage);
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.OVERLAY_IMAGE);
+export const saveWorkspaceList = (workspaces) => {
+  localStorage.setItem(STORAGE_KEYS.WORKSPACES, JSON.stringify(workspaces));
+};
+
+export const loadWorkspaceList = () => {
+  const workspaces = localStorage.getItem(STORAGE_KEYS.WORKSPACES);
+  return workspaces ? JSON.parse(workspaces) : [];
+};
+
+export const saveCurrentWorkspace = (workspaceId) => {
+  localStorage.setItem(STORAGE_KEYS.CURRENT_WORKSPACE, workspaceId);
+};
+
+export const saveToWorkspace = (workspaceId, nodes, edges, overlayImage, imageOpacity, nodeCounter) => {
+  const workspaceKey = getWorkspaceKey(workspaceId);
+  const workspaceData = {
+    nodes,
+    edges,
+    imageOpacity,
+    nodeCounter,
+    overlayImage,
+    lastModified: Date.now()
+  };
+  
+  localStorage.setItem(workspaceKey, JSON.stringify(workspaceData));
+};
+
+export const loadFromWorkspace = (workspaceId) => {
+  try {
+    const workspaceKey = getWorkspaceKey(workspaceId);
+    const workspaceData = localStorage.getItem(workspaceKey);
+    
+    if (!workspaceData) {
+      return {
+        nodes: [],
+        edges: [],
+        overlayImage: null,
+        imageOpacity: 0.5,
+        nodeCounter: 0
+      };
     }
 
-    // Save node counter
-    localStorage.setItem(STORAGE_KEYS.NODE_COUNTER, nodeCounter.toString());
-  } catch (error) {
-    console.error('Error saving to localStorage:', error);
-  }
-};
-
-export const loadFromLocalStorage = () => {
-  try {
-    // Load graph data
-    const graphDataString = localStorage.getItem(STORAGE_KEYS.GRAPH_DATA);
-    const graphData = graphDataString ? JSON.parse(graphDataString) : null;
-
-    // Load overlay image
-    const overlayImage = localStorage.getItem(STORAGE_KEYS.OVERLAY_IMAGE);
-
-    // Load node counter
-    const nodeCounter = parseInt(localStorage.getItem(STORAGE_KEYS.NODE_COUNTER)) || 0;
-
+    const data = JSON.parse(workspaceData);
     return {
-      nodes: graphData?.nodes || [],
-      edges: graphData?.edges || [],
-      overlayImage,
-      imageOpacity: graphData?.imageOpacity ?? 0.5,
-      nodeCounter
+      nodes: data.nodes || [],
+      edges: data.edges || [],
+      overlayImage: data.overlayImage,
+      imageOpacity: data.imageOpacity ?? 0.5,
+      nodeCounter: data.nodeCounter || 0
     };
   } catch (error) {
-    console.error('Error loading from localStorage:', error);
+    console.error('Error loading workspace:', error);
     return {
       nodes: [],
       edges: [],

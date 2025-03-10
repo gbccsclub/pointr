@@ -53,7 +53,7 @@ const Controls = ({
   onImport,
   editorMode,
   onModeChange,
-  onClearData
+  // Remove onClearData from props
 }) => {
   const handleImageInputChange = (e) => {
     const file = e.target.files[0];
@@ -153,16 +153,8 @@ const Controls = ({
             </>
           )}
         </div>
-
-        {/* Add clear data button */}
-        <div className="h-4 w-px bg-gray-200"></div>
-        <button
-          onClick={onClearData}
-          className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded transition-colors"
-          title="Clear All Data"
-        >
-          <Icons.Delete />
-        </button>
+        
+        {/* Remove clear data button and its divider */}
       </div>
     </div>
   );
