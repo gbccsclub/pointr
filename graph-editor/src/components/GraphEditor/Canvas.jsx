@@ -49,13 +49,18 @@ const Canvas = ({
     getCurrentNodeCounter, 
     setNodeCounter 
   } = useGraphOperations(
-    initialNodeCounter,
+    Number(initialNodeCounter), // Ensure it's a number
     onNodeCounterChange
   );
 
   // Add effect to handle node counter initialization
   useEffect(() => {
-    setNodeCounter(initialNodeCounter);
+    const counter = Number(initialNodeCounter);
+    if (!isNaN(counter)) {
+      setNodeCounter(counter);
+    } else {
+      setNodeCounter(0);
+    }
   }, [initialNodeCounter, setNodeCounter]);
 
   // Convert screen coordinates to canvas coordinates

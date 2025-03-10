@@ -209,13 +209,13 @@ const GraphEditor = () => {
           edges,
           overlayImage,
           imageOpacity,
-          Math.max(...nodes.map(n => parseInt(n.id.replace('node-', ''), 10)), -1) + 1
+          nodeCounter // Pass the current nodeCounter
         );
       }, 1000);
 
       return () => clearTimeout(saveTimeout);
     }
-  }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity]);
+  }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity, nodeCounter]);
 
   useEffect(() => {
     const handleResize = () => {

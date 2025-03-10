@@ -25,7 +25,7 @@ export const saveToWorkspace = (workspaceId, nodes, edges, overlayImage, imageOp
     nodes,
     edges,
     imageOpacity,
-    nodeCounter, // Make sure we store this
+    nodeCounter: Number(nodeCounter), // Ensure it's saved as a number
     overlayImage,
     lastModified: Date.now()
   };
@@ -44,18 +44,32 @@ export const loadFromWorkspace = (workspaceId) => {
         edges: [],
         overlayImage: null,
         imageOpacity: 0.5,
-        nodeCounter: 0 // Default counter value
+        nodeCounter: 0
       };
     }
 
     const data = JSON.parse(workspaceData);
+    
+    // Calculate the next available node counter if not present
+    let nodeCounter;
+    if (typeof data.nodeCounter === 'number' && !isNaN(data.nodeCounter)) {
+      nodeCounter = data.nodeCounter;
+    } else {
+      nodeCounter = Math.max(
+        ...(data.nodes || [])
+          .filter(n => n.type === 'pathNode')
+          .map(n => parseInt(n.id, 10))
+          .filter(id => !isNaN(id)),
+        -1
+      ) + 1;
+    }
+
     return {
       nodes: data.nodes || [],
       edges: data.edges || [],
       overlayImage: data.overlayImage,
       imageOpacity: data.imageOpacity ?? 0.5,
-      nodeCounter: typeof data.nodeCounter === 'number' ? data.nodeCounter : 
-        Math.max(...(data.nodes || []).map(n => parseInt(n.id.replace('node-', ''), 10)), -1) + 1
+      nodeCounter: nodeCounter
     };
   } catch (error) {
     console.error('Error loading workspace:', error);
