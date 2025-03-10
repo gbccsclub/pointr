@@ -299,6 +299,8 @@ const GraphEditor = () => {
           edges={edges}
           gridSize={gridSize}
           selectedNode={selectedNode}
+          selectedEdge={selectedEdge}
+          editorMode={editorMode}
         />
       </div>
 

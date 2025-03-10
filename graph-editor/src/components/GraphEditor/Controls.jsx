@@ -8,14 +8,16 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
     </svg>
   ),
-  Node: () => (
+  Create: () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="6" strokeWidth={2} />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
     </svg>
   ),
-  Edge: () => (
+  Connect: () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12h16m-7-7l7 7-7 7" />
+      <circle cx="6" cy="12" r="3" strokeWidth={2} />
+      <circle cx="18" cy="12" r="3" strokeWidth={2} />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6" />
     </svg>
   ),
   Delete: () => (
@@ -87,10 +89,11 @@ const Controls = ({
 
           <button
             onClick={() => onModeChange(editorMode === 'node' ? 'edge' : 'node')}
-            className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+            className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors flex items-center gap-1.5"
             title={editorMode === 'node' ? 'Switch to Edge Mode' : 'Switch to Node Mode'}
           >
-            {editorMode === 'node' ? <Icons.Node /> : <Icons.Edge />}
+            {editorMode === 'node' ? <Icons.Create /> : <Icons.Connect />}
+            <span>{editorMode === 'node' ? 'Create' : 'Connect'}</span>
           </button>
 
           {(selectedNode || selectedEdge) && (
