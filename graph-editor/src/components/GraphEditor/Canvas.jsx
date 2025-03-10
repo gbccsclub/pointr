@@ -24,6 +24,7 @@ const Canvas = ({
   editorMode,
   selectedEdge,
   setSelectedEdge,
+  nodeSize, // Add nodeSize prop
 }) => {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
@@ -207,8 +208,7 @@ const Canvas = ({
   };
 
   const drawNode = (ctx, node, isSelected) => {
-    // Reduce radius from 10 to 6
-    const radius = 6;
+    const radius = nodeSize; // Use the nodeSize prop instead of hardcoded value
     
     // Use explicit colors instead of CSS variables
     const primaryBlue = '#2563eb';     // Default node color
@@ -234,7 +234,7 @@ const Canvas = ({
     ctx.fillStyle = '#1e293b'; // Text color
     ctx.font = '11px system-ui';
     ctx.textAlign = 'center';
-    ctx.fillText(node.label, node.x, node.y + 18);
+    ctx.fillText(node.label, node.x, node.y + (radius + 12)); // Adjust label position based on node size
   };
 
   const drawEdge = (ctx, fromNode, toNode, edge) => {

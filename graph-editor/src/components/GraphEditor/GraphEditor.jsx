@@ -22,6 +22,7 @@ const GraphEditor = () => {
   const [overlayImage, setOverlayImage] = useState(null);
   const [imageOpacity, setImageOpacity] = useState(0.5);
   const [editorMode, setEditorMode] = useState('node'); // 'node' or 'edge'
+  const [nodeSize, setNodeSize] = useState(6); // 6 is the current default size
 
   const { history, currentStateIndex, saveToHistory, handleUndo, canUndo } = useGraphHistory();
 
@@ -171,6 +172,8 @@ const GraphEditor = () => {
           setShowDistances={setShowDistances}
           gridSize={gridSize}
           setGridSize={setGridSize}
+          nodeSize={nodeSize}
+          setNodeSize={setNodeSize}
         />
       </div>
 
@@ -208,6 +211,7 @@ const GraphEditor = () => {
         editorMode={editorMode}
         selectedEdge={selectedEdge}
         setSelectedEdge={setSelectedEdge}
+        nodeSize={nodeSize}
       />
     </div>
   );

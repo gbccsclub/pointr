@@ -9,6 +9,8 @@ const GridControls = ({
   setShowDistances,
   gridSize,
   setGridSize,
+  nodeSize,
+  setNodeSize,
 }) => {
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-xs">
@@ -46,7 +48,7 @@ const GridControls = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <span>Size:</span>
+          <span>Grid:</span>
           <input
             type="range"
             min="10"
@@ -56,6 +58,19 @@ const GridControls = ({
             className="w-20 h-3 accent-blue-600"
           />
           <span className="w-7 text-right">{gridSize}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span>Node:</span>
+          <input
+            type="range"
+            min="3"
+            max="12"
+            value={nodeSize}
+            onChange={(e) => setNodeSize(Number(e.target.value))}
+            className="w-20 h-3 accent-blue-600"
+          />
+          <span className="w-7 text-right">{nodeSize}</span>
         </div>
       </div>
     </div>
