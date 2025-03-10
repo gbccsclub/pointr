@@ -11,6 +11,7 @@ const GraphEditor = () => {
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [selectedEdge, setSelectedEdge] = useState(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingFrom, setDrawingFrom] = useState(null);
   const [gridSize, setGridSize] = useState(15);
@@ -59,10 +60,21 @@ const GraphEditor = () => {
     saveToHistory({ nodes: filteredNodes, edges: filteredEdges });
   };
 
+  const handleDeleteEdge = () => {
+    if (!selectedEdge) return;
+    
+    const filteredEdges = edges.filter(edge => edge.id !== selectedEdge.id);
+    setEdges(filteredEdges);
+    setSelectedEdge(null);
+    saveToHistory({ nodes, edges: filteredEdges });
+  };
+
   useKeyboardShortcuts({
     selectedNode,
+    selectedEdge,
     handleUndo: handleUndoAction,
-    handleDeleteNode
+    handleDeleteNode,
+    handleDeleteEdge
   });
 
   const handleNodeSelect = (node) => {
@@ -132,7 +144,9 @@ const GraphEditor = () => {
           handleUndo={handleUndoAction}
           canUndo={canUndo}
           selectedNode={selectedNode}
+          selectedEdge={selectedEdge}
           onDeleteNode={handleDeleteNode}
+          onDeleteEdge={handleDeleteEdge}
           image={overlayImage}
           opacity={imageOpacity}
           onImageUpload={handleImageUpload}
@@ -192,6 +206,8 @@ const GraphEditor = () => {
         saveToHistory={saveToHistory}
         onEdgeCreate={handleEdgeCreate}
         editorMode={editorMode}
+        selectedEdge={selectedEdge}
+        setSelectedEdge={setSelectedEdge}
       />
     </div>
   );

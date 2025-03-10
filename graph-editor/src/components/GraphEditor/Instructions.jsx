@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Instructions = ({ nodes, edges, gridSize, selectedNode, editorMode }) => {
+const Instructions = ({ nodes, edges, gridSize, selectedNode, selectedEdge, editorMode }) => {
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-xs w-48">
       <div className="flex justify-between items-center mb-1.5">
@@ -17,13 +17,18 @@ const Instructions = ({ nodes, edges, gridSize, selectedNode, editorMode }) => {
         ) : (
           <li>• Click nodes to connect</li>
         )}
-        <li>• Click node to select</li>
-        <li>• Del to remove node</li>
+        <li>• Click node/edge to select</li>
+        <li>• Del to remove selected</li>
         <li>• Ctrl+Z to undo</li>
       </ul>
       {selectedNode && (
         <div className="text-slate-500">
-          Selected: {selectedNode.label} ({selectedNode.x}, {selectedNode.y})
+          Selected: Node {selectedNode.label} ({selectedNode.x}, {selectedNode.y})
+        </div>
+      )}
+      {selectedEdge && (
+        <div className="text-slate-500">
+          Selected: Edge {selectedEdge.id}
         </div>
       )}
     </div>

@@ -40,7 +40,9 @@ const Controls = ({
   handleUndo,
   canUndo,
   selectedNode,
+  selectedEdge,
   onDeleteNode,
+  onDeleteEdge,
   image,
   opacity,
   onImageUpload,
@@ -78,11 +80,11 @@ const Controls = ({
             {editorMode === 'node' ? <Icons.Node /> : <Icons.Edge />}
           </button>
 
-          {selectedNode && (
+          {(selectedNode || selectedEdge) && (
             <button
-              onClick={onDeleteNode}
+              onClick={selectedNode ? onDeleteNode : onDeleteEdge}
               className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded transition-colors"
-              title="Delete Selected (Del)"
+              title={`Delete Selected ${selectedNode ? 'Node' : 'Edge'} (Del)`}
             >
               <Icons.Delete />
             </button>

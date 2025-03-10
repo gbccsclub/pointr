@@ -1,6 +1,12 @@
 import { useEffect } from 'react';
 
-export const useKeyboardShortcuts = ({ selectedNode, handleUndo, handleDeleteNode }) => {
+export const useKeyboardShortcuts = ({ 
+  selectedNode, 
+  selectedEdge, 
+  handleUndo, 
+  handleDeleteNode,
+  handleDeleteEdge 
+}) => {
   useEffect(() => {
     const handleKeyDown = (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
@@ -10,11 +16,15 @@ export const useKeyboardShortcuts = ({ selectedNode, handleUndo, handleDeleteNod
       
       if (event.key === 'Delete' || event.key === 'Backspace') {
         event.preventDefault();
-        handleDeleteNode();
+        if (selectedNode) {
+          handleDeleteNode();
+        } else if (selectedEdge) {
+          handleDeleteEdge();
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleDeleteNode]);
+  }, [handleUndo, handleDeleteNode, handleDeleteEdge, selectedNode, selectedEdge]);
 };

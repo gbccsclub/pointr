@@ -22,6 +22,8 @@ const Canvas = ({
   overlayImage,
   imageOpacity,
   editorMode,
+  selectedEdge,
+  setSelectedEdge,
 }) => {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
@@ -143,7 +145,7 @@ const Canvas = ({
       const fromNode = nodes.find(n => n.id === edge.from);
       const toNode = nodes.find(n => n.id === edge.to);
       if (fromNode && toNode) {
-        drawEdge(ctx, fromNode, toNode);
+        drawEdge(ctx, fromNode, toNode, edge);
         if (showDistances) {
           drawDistance(ctx, fromNode, toNode);
         }
@@ -235,12 +237,20 @@ const Canvas = ({
     ctx.fillText(node.label, node.x, node.y + 18);
   };
 
-  const drawEdge = (ctx, fromNode, toNode) => {
+  const drawEdge = (ctx, fromNode, toNode, edge) => {
     ctx.beginPath();
     ctx.moveTo(fromNode.x, fromNode.y);
     ctx.lineTo(toNode.x, toNode.y);
-    ctx.strokeStyle = '#93c5fd';  // Changed to light blue
-    ctx.lineWidth = 2;
+    
+    // Highlight selected edge
+    if (selectedEdge && edge.id === selectedEdge.id) {
+      ctx.strokeStyle = '#60a5fa';  // Light blue for selected edge
+      ctx.lineWidth = 3;
+    } else {
+      ctx.strokeStyle = '#93c5fd';  // Default light blue
+      ctx.lineWidth = 2;
+    }
+    
     ctx.stroke();
   };
 
@@ -288,12 +298,45 @@ const Canvas = ({
     requestAnimationFrame(redrawCanvas);
   };
 
+  const isPointOnEdge = (point, edge) => {
+    const fromNode = nodes.find(n => n.id === edge.from);
+    const toNode = nodes.find(n => n.id === edge.to);
+    if (!fromNode || !toNode) return false;
+
+    // Convert line segment to vector
+    const lineVector = {
+      x: toNode.x - fromNode.x,
+      y: toNode.y - fromNode.y
+    };
+
+    // Vector from start point to click point
+    const pointVector = {
+      x: point.x - fromNode.x,
+      y: point.y - fromNode.y
+    };
+
+    // Calculate dot products
+    const lineLengthSquared = lineVector.x * lineVector.x + lineVector.y * lineVector.y;
+    const t = Math.max(0, Math.min(1, (pointVector.x * lineVector.x + pointVector.y * lineVector.y) / lineLengthSquared));
+
+    // Calculate nearest point on line
+    const nearestPoint = {
+      x: fromNode.x + t * lineVector.x,
+      y: fromNode.y + t * lineVector.y
+    };
+
+    // Calculate distance from click to nearest point
+    const distance = Math.hypot(point.x - nearestPoint.x, point.y - nearestPoint.y);
+    
+    // Consider the click "on the edge" if within 5 pixels
+    return distance <= 5;
+  };
+
   const handleMouseDown = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
     const screenX = e.clientX - rect.left;
     const screenY = e.clientY - rect.top;
     
-    // Middle mouse button or Space + Left click for panning
     if (e.button === 1 || (e.button === 0 && e.getModifierState('Space'))) {
       setIsPanning(true);
       setLastPanPoint({ x: screenX, y: screenY });
@@ -301,14 +344,11 @@ const Canvas = ({
     }
 
     const { x, y } = screenToCanvas(screenX, screenY);
-    const snappedX = snapToGrid ? snapToGridHelper(x, gridSize) : x;
-    const snappedY = snapToGrid ? snapToGridHelper(y, gridSize) : y;
+    const clickPoint = { x, y };
 
-    // Increase hit detection radius and account for zoom
-    const hitRadius = 10 / zoom; // Adjust this value as needed
-
+    // Check for node clicks first
     const clickedNode = nodes.find(node => 
-      Math.hypot(node.x - snappedX, node.y - snappedY) <= hitRadius
+      Math.hypot(node.x - x, node.y - y) <= 10 / zoom
     );
 
     if (clickedNode) {
@@ -329,14 +369,28 @@ const Canvas = ({
           setDrawingFrom(clickedNode);
         }
       }
-      // Prevent creating new node when clicking on existing one
+      setSelectedEdge(null);
       e.stopPropagation();
       return;
     }
 
+    // Check for edge clicks
+    const clickedEdge = edges.find(edge => isPointOnEdge(clickPoint, edge));
+    
+    if (clickedEdge) {
+      setSelectedEdge(clickedEdge);
+      setSelectedNode(null);
+      e.stopPropagation();
+      return;
+    }
+
+    // If nothing was clicked, clear selections
+    setSelectedNode(null);
+    setSelectedEdge(null);
+
     // Only create new node if in node mode and didn't click existing node
     if (editorMode === 'node') {
-      const newNode = createNode(snappedX, snappedY);
+      const newNode = createNode(x, y);
       const updatedNodes = [...nodes, newNode];
       setNodes(updatedNodes);
       setSelectedNode(newNode);
