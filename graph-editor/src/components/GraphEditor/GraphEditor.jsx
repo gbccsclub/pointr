@@ -20,6 +20,7 @@ const GraphEditor = () => {
   const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [overlayImage, setOverlayImage] = useState(null);
   const [imageOpacity, setImageOpacity] = useState(0.5);
+  const [editorMode, setEditorMode] = useState('node'); // 'node' or 'edge'
 
   const { history, currentStateIndex, saveToHistory, handleUndo, canUndo } = useGraphHistory();
 
@@ -82,8 +83,6 @@ const GraphEditor = () => {
       setEdges(newEdges);
       saveToHistory({ nodes, edges: newEdges });
     }
-    setIsDrawing(false);
-    setDrawingFrom(null);
   };
 
   const handleImageUpload = (e) => {
@@ -134,6 +133,8 @@ const GraphEditor = () => {
           nodes={nodes}
           edges={edges}
           onImport={handleNeo4jImport}
+          editorMode={editorMode}
+          onModeChange={setEditorMode}
         />
       </div>
 
@@ -182,6 +183,7 @@ const GraphEditor = () => {
         setDrawingFrom={setDrawingFrom}
         saveToHistory={saveToHistory}
         onEdgeCreate={handleEdgeCreate}
+        editorMode={editorMode}
       />
     </div>
   );

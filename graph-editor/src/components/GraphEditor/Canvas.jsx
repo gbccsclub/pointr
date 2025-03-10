@@ -21,6 +21,7 @@ const Canvas = ({
   onEdgeCreate,
   overlayImage,
   imageOpacity,
+  editorMode,
 }) => {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
@@ -185,19 +186,31 @@ const Canvas = ({
     );
 
     if (clickedNode) {
-      if (isDrawing) {
-        onEdgeCreate(drawingFrom, clickedNode);
+      if (editorMode === 'edge' && isDrawing && drawingFrom) {
+        // If we're drawing an edge and click a second node, create the edge
+        if (clickedNode.id !== drawingFrom.id) {
+          onEdgeCreate(drawingFrom, clickedNode);
+        }
+        // Reset drawing state
+        setIsDrawing(false);
+        setDrawingFrom(null);
       } else {
         setSelectedNode(clickedNode);
-        setIsDrawing(true);
-        setDrawingFrom(clickedNode);
+        if (editorMode === 'edge') {
+          setIsDrawing(true);
+          setDrawingFrom(clickedNode);
+        }
       }
-    } else {
+    } else if (editorMode === 'node') {
       const newNode = createNode(x, y);
       const updatedNodes = [...nodes, newNode];
       setNodes(updatedNodes);
       setSelectedNode(newNode);
       saveToHistory({ nodes: updatedNodes, edges });
+    } else {
+      // Click on empty space while in edge mode - clear drawing state
+      setIsDrawing(false);
+      setDrawingFrom(null);
     }
   };
 

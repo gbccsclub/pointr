@@ -13,7 +13,9 @@ const Controls = ({
   onImageToggle,
   nodes,
   edges,
-  onImport
+  onImport,
+  editorMode,
+  onModeChange
 }) => {
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-xs">
@@ -31,6 +33,29 @@ const Controls = ({
           >
             Undo
           </button>
+
+          <div className="flex rounded overflow-hidden">
+            <button
+              onClick={() => onModeChange('node')}
+              className={`px-2 py-0.5 transition-colors ${
+                editorMode === 'node'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+              }`}
+            >
+              Node
+            </button>
+            <button
+              onClick={() => onModeChange('edge')}
+              className={`px-2 py-0.5 transition-colors ${
+                editorMode === 'edge'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+              }`}
+            >
+              Edge
+            </button>
+          </div>
 
           {selectedNode && (
             <button
