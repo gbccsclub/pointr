@@ -108,16 +108,31 @@ const Canvas = ({
     
     // Draw background image if exists
     if (imageRef.current) {
-      ctx.globalAlpha = imageOpacity;
       const img = imageRef.current;
-      const scale = Math.min(
-        canvasSize.width / img.width,
-        canvasSize.height / img.height
-      );
-      const x = (canvasSize.width / zoom - img.width * scale) / 2;
-      const y = (canvasSize.height / zoom - img.height * scale) / 2;
+      ctx.globalAlpha = imageOpacity;
       
-      ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+      // Calculate the base scale to fit the image within the canvas
+      const scaleX = canvasSize.width / img.width;
+      const scaleY = canvasSize.height / img.height;
+      const baseScale = Math.min(scaleX, scaleY);
+      
+      // Calculate image dimensions
+      const scaledWidth = img.width * baseScale;
+      const scaledHeight = img.height * baseScale;
+      
+      // Position image at (0,0) in canvas space
+      const x = -scaledWidth / 2;
+      const y = -scaledHeight / 2;
+      
+      // Draw the image
+      ctx.drawImage(
+        img,
+        x,
+        y,
+        scaledWidth,
+        scaledHeight
+      );
+      
       ctx.globalAlpha = 1;
     }
     
@@ -133,7 +148,7 @@ const Canvas = ({
       }
     });
     
-    // Draw temporary edge while drawing - moved inside the transformed context
+    // Draw temporary edge while drawing
     if (isDrawing && drawingFrom) {
       drawTempEdge(ctx, drawingFrom, mousePos);
     }
@@ -366,6 +381,32 @@ const Canvas = ({
       setDraggedNode(null);
     }
   };
+
+  // Add this effect to handle initial image centering
+  useEffect(() => {
+    if (overlayImage) {
+      const img = new Image();
+      img.src = overlayImage;
+      img.onload = () => {
+        // Center the canvas view when a new image is loaded
+        const scaleX = canvasSize.width / img.width;
+        const scaleY = canvasSize.height / img.height;
+        const baseScale = Math.min(scaleX, scaleY);
+        
+        setZoom(1);
+        setOffset({
+          x: canvasSize.width / 2,
+          y: canvasSize.height / 2
+        });
+        
+        imageRef.current = img;
+        redrawCanvas();
+      };
+    } else {
+      imageRef.current = null;
+      redrawCanvas();
+    }
+  }, [overlayImage]);
 
   return (
     <canvas
