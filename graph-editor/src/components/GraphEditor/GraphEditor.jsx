@@ -271,7 +271,10 @@ const GraphEditor = () => {
   // Add this handler function
   const handleNodeSearch = (node) => {
     setSelectedNode(node);
+    // Set viewport center to trigger zoom and centering
     setViewportCenter({ x: node.x, y: node.y });
+    // Also set the highlighted node for the blinking effect
+    setHighlightedNode(node);
   };
 
   return (

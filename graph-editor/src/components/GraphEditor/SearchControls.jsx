@@ -11,12 +11,25 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
   ),
+  PathNode: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3" strokeWidth={2} />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v4m0 12v4m10-10h-4m-12 0h-4" />
+    </svg>
+  ),
+  Room: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <rect x="4" y="4" width="16" height="16" rx="2" strokeWidth={2} />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9h16M9 4v16" />
+    </svg>
+  ),
 };
 
 const SearchControls = ({ nodes, onNodeSelect }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredNodes, setFilteredNodes] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [nodeTypeFilter, setNodeTypeFilter] = useState('pathNode');
 
   useEffect(() => {
     if (searchTerm.trim() === '') {
@@ -26,14 +39,14 @@ const SearchControls = ({ nodes, onNodeSelect }) => {
 
     const filtered = nodes
       .filter(node => 
-        node.type === 'pathNode' && 
+        node.type === nodeTypeFilter && 
         (node.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
          (node.label && node.label.toLowerCase().includes(searchTerm.toLowerCase())))
       )
-      .slice(0, 5); // Limit to 5 results
+      .slice(0, 5);
 
     setFilteredNodes(filtered);
-  }, [searchTerm, nodes]);
+  }, [searchTerm, nodes, nodeTypeFilter]);
 
   const handleSelect = (node) => {
     onNodeSelect(node);
@@ -41,11 +54,27 @@ const SearchControls = ({ nodes, onNodeSelect }) => {
     setIsOpen(false);
   };
 
+  const toggleNodeType = () => {
+    setNodeTypeFilter(current => current === 'pathNode' ? 'roomNode' : 'pathNode');
+    setSearchTerm('');
+    setFilteredNodes([]);
+  };
+
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-xs">
       <div className="relative">
-        <div className="flex items-center gap-1">
-          <div className="relative flex items-center">
+        <div className="flex gap-2">
+          {/* Single toggle button */}
+          <button
+            onClick={toggleNodeType}
+            className="flex items-center px-2 py-1.5 rounded-md border bg-white hover:bg-gray-50 transition-colors"
+            title={`Currently searching ${nodeTypeFilter === 'pathNode' ? 'path' : 'room'} nodes. Click to toggle.`}
+          >
+            {nodeTypeFilter === 'pathNode' ? <Icons.PathNode /> : <Icons.Room />}
+          </button>
+
+          {/* Search input */}
+          <div className="relative flex-1">
             <input
               type="text"
               value={searchTerm}
@@ -53,10 +82,11 @@ const SearchControls = ({ nodes, onNodeSelect }) => {
                 setSearchTerm(e.target.value);
                 setIsOpen(true);
               }}
-              placeholder="Search nodes..."
-              className="pl-7 pr-2 py-1 w-32 rounded border border-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onFocus={() => setIsOpen(true)}
+              placeholder={`Search ${nodeTypeFilter === 'pathNode' ? 'path' : 'room'} nodes...`}
+              className="w-full pl-8 pr-8 py-1.5 bg-white/90 backdrop-blur-sm rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
             />
-            <div className="absolute left-2 text-gray-400">
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400">
               <Icons.Search />
             </div>
             {searchTerm && (
@@ -65,7 +95,7 @@ const SearchControls = ({ nodes, onNodeSelect }) => {
                   setSearchTerm('');
                   setIsOpen(false);
                 }}
-                className="absolute right-2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
               >
                 <Icons.Clear />
               </button>
@@ -84,7 +114,7 @@ const SearchControls = ({ nodes, onNodeSelect }) => {
               >
                 <div className="font-medium">{node.id}</div>
                 {node.label && (
-                  <div className="text-gray-500 text-xs">{node.label}</div>
+                  <div className="text-sm text-gray-500">{node.label}</div>
                 )}
               </button>
             ))}
