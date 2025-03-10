@@ -151,7 +151,8 @@ const GraphEditor = () => {
     selectedEdge,
     handleUndo: handleUndoAction,
     handleDeleteNode,
-    handleDeleteEdge
+    handleDeleteEdge,
+    setEditorMode
   });
 
   const handleNodeSelect = (node) => {

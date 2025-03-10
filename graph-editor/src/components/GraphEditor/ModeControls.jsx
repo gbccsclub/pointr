@@ -36,7 +36,7 @@ const ModeControls = ({ editorMode, onModeChange }) => {
         onClick={() => onModeChange('pathNode')}
         disabled={editorMode === 'pathNode'}
         className={buttonClass('pathNode')}
-        title="Create Path Node"
+        title="Create Path Node (P)"
       >
         <Icons.PathNode />
       </button>
@@ -45,7 +45,7 @@ const ModeControls = ({ editorMode, onModeChange }) => {
         onClick={() => onModeChange('roomNode')}
         disabled={editorMode === 'roomNode'}
         className={buttonClass('roomNode')}
-        title="Create Room Node"
+        title="Create Room Node (R)"
       >
         <Icons.Room />
       </button>
@@ -54,7 +54,7 @@ const ModeControls = ({ editorMode, onModeChange }) => {
         onClick={() => onModeChange('edge')}
         disabled={editorMode === 'edge'}
         className={buttonClass('edge')}
-        title="Connect Nodes"
+        title="Connect Nodes (C)"
       >
         <Icons.Connect />
       </button>

@@ -5,10 +5,16 @@ export const useKeyboardShortcuts = ({
   selectedEdge, 
   handleUndo, 
   handleDeleteNode,
-  handleDeleteEdge 
+  handleDeleteEdge,
+  setEditorMode
 }) => {
   useEffect(() => {
     const handleKeyDown = (event) => {
+      // Ignore shortcuts if user is typing in an input field
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
       if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
         event.preventDefault();
         handleUndo();
@@ -22,9 +28,25 @@ export const useKeyboardShortcuts = ({
           handleDeleteEdge();
         }
       }
+
+      // Mode switching shortcuts
+      switch (event.key.toLowerCase()) {
+        case 'p':
+          event.preventDefault();
+          setEditorMode('pathNode');
+          break;
+        case 'r':
+          event.preventDefault();
+          setEditorMode('roomNode');
+          break;
+        case 'c':
+          event.preventDefault();
+          setEditorMode('edge');
+          break;
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleDeleteNode, handleDeleteEdge, selectedNode, selectedEdge]);
+  }, [handleUndo, handleDeleteNode, handleDeleteEdge, selectedNode, selectedEdge, setEditorMode]);
 };
