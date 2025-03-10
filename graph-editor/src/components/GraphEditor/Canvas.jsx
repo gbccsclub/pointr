@@ -344,11 +344,14 @@ const Canvas = ({
     }
 
     const { x, y } = screenToCanvas(screenX, screenY);
-    const clickPoint = { x, y };
+    // Apply snap to grid for initial coordinates
+    const snappedX = snapToGrid ? snapToGridHelper(x, gridSize) : x;
+    const snappedY = snapToGrid ? snapToGridHelper(y, gridSize) : y;
+    const clickPoint = { x: snappedX, y: snappedY };
 
     // Check for node clicks first
     const clickedNode = nodes.find(node => 
-      Math.hypot(node.x - x, node.y - y) <= 10 / zoom
+      Math.hypot(node.x - snappedX, node.y - snappedY) <= 10 / zoom
     );
 
     if (clickedNode) {
@@ -390,7 +393,7 @@ const Canvas = ({
 
     // Only create new node if in node mode and didn't click existing node
     if (editorMode === 'node') {
-      const newNode = createNode(x, y);
+      const newNode = createNode(snappedX, snappedY);  // Use snapped coordinates
       const updatedNodes = [...nodes, newNode];
       setNodes(updatedNodes);
       setSelectedNode(newNode);
