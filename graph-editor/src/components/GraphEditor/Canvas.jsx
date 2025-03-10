@@ -73,19 +73,21 @@ const Canvas = ({
     if (!showGrid) return;
 
     const patternCanvas = document.createElement('canvas');
-    const size = gridSize * zoom;
-    patternCanvas.width = size;
-    patternCanvas.height = size;
+    patternCanvas.width = gridSize;
+    patternCanvas.height = gridSize;
     const patternCtx = patternCanvas.getContext('2d');
+
+    // Create dot without zoom factor since we're scaling in drawGrid
+    const dotSize = 1;
 
     patternCtx.fillStyle = 'var(--grid)';
     patternCtx.beginPath();
-    patternCtx.arc(0, 0, 1 * zoom, 0, 2 * Math.PI);
+    patternCtx.arc(0, 0, dotSize, 0, 2 * Math.PI);
     patternCtx.fill();
 
     const pattern = canvasRef.current?.getContext('2d').createPattern(patternCanvas, 'repeat');
     gridPatternRef.current = pattern;
-  }, [gridSize, zoom, showGrid]);
+  }, [gridSize, showGrid]); // Removed zoom dependency since we handle it in drawGrid
 
   useEffect(() => {
     createGridPattern();
@@ -182,17 +184,23 @@ const Canvas = ({
     
     const pattern = gridPatternRef.current;
     
-    // Adjust pattern offset based on pan position
+    // Calculate pattern offset in screen space, accounting for zoom properly
     const patternOffset = {
-      x: offset.x % (gridSize * zoom),
-      y: offset.y % (gridSize * zoom)
+      x: (offset.x / zoom) % gridSize,
+      y: (offset.y / zoom) % gridSize
     };
     
     ctx.save();
     ctx.resetTransform(); // Reset the transform to draw grid in screen space
+    ctx.scale(zoom, zoom); // Apply zoom to make grid cells scale properly
     ctx.fillStyle = pattern;
     ctx.translate(patternOffset.x, patternOffset.y);
-    ctx.fillRect(-patternOffset.x, -patternOffset.y, canvasSize.width, canvasSize.height);
+    ctx.fillRect(
+      -patternOffset.x - gridSize,
+      -patternOffset.y - gridSize,
+      (canvasSize.width / zoom) + (2 * gridSize),
+      (canvasSize.height / zoom) + (2 * gridSize)
+    );
     ctx.restore();
   };
 
