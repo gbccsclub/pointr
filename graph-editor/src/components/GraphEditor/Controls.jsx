@@ -20,6 +20,11 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6" />
     </svg>
   ),
+  Room: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  ),
   Delete: () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -69,6 +74,13 @@ const Controls = ({
     }
   };
 
+  const handleModeToggle = () => {
+    const modes = ['pathNode', 'edge', 'roomNode'];
+    const currentIndex = modes.indexOf(editorMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    onModeChange(modes[nextIndex]);
+  };
+
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-xs">
       <div className="flex items-center gap-2">
@@ -88,12 +100,22 @@ const Controls = ({
           </button>
 
           <button
-            onClick={() => onModeChange(editorMode === 'node' ? 'edge' : 'node')}
+            onClick={handleModeToggle}
             className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors flex items-center gap-1.5"
-            title={editorMode === 'node' ? 'Switch to Edge Mode' : 'Switch to Node Mode'}
+            title={
+              editorMode === 'pathNode' ? 'Switch to Edge Mode' :
+              editorMode === 'edge' ? 'Switch to Room Node Mode' :
+              'Switch to Path Node Mode'
+            }
           >
-            {editorMode === 'node' ? <Icons.Create /> : <Icons.Connect />}
-            <span>{editorMode === 'node' ? 'Create' : 'Connect'}</span>
+            {editorMode === 'pathNode' ? <Icons.Connect /> :
+             editorMode === 'edge' ? <Icons.Room /> :
+             <Icons.Create />}
+            <span>
+              {editorMode === 'pathNode' ? 'Create Path' :
+               editorMode === 'edge' ? 'Connect' :
+               'Create Room'}
+            </span>
           </button>
 
           {(selectedNode || selectedEdge) && (

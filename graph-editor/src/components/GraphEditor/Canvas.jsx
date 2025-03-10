@@ -41,7 +41,14 @@ const Canvas = ({
   const [isPanning, setIsPanning] = useState(false);
   const [lastPanPoint, setLastPanPoint] = useState(null);
 
-  const { createNode, snapToGridHelper, calculateEdgeDistance, getCurrentNodeCounter, setNodeCounter } = useGraphOperations(
+  const { 
+    createPathNode, 
+    createRoomNode,
+    snapToGridHelper, 
+    calculateEdgeDistance, 
+    getCurrentNodeCounter, 
+    setNodeCounter 
+  } = useGraphOperations(
     initialNodeCounter,
     onNodeCounterChange
   );
@@ -351,7 +358,6 @@ const Canvas = ({
     }
 
     const { x, y } = screenToCanvas(screenX, screenY);
-    // Apply snap to grid for initial coordinates
     const snappedX = snapToGrid ? snapToGridHelper(x, gridSize) : x;
     const snappedY = snapToGrid ? snapToGridHelper(y, gridSize) : y;
     const clickPoint = { x: snappedX, y: snappedY };
@@ -368,7 +374,7 @@ const Canvas = ({
         }
         setIsDrawing(false);
         setDrawingFrom(null);
-      } else if (editorMode === 'node') {
+      } else if (editorMode === 'pathNode' || editorMode === 'roomNode') {
         setSelectedNode(clickedNode);
         setIsDragging(true);
         setDraggedNode(clickedNode);
@@ -398,14 +404,20 @@ const Canvas = ({
     setSelectedNode(null);
     setSelectedEdge(null);
 
-    // Only create new node if in node mode and didn't click existing node
-    if (editorMode === 'node') {
-      const newNode = createNode(snappedX, snappedY);  // Use snapped coordinates
+    // Create new node based on mode
+    if (editorMode === 'pathNode' || editorMode === 'roomNode') {
+      const newNode = editorMode === 'pathNode' 
+        ? createPathNode(snappedX, snappedY)
+        : createRoomNode(snappedX, snappedY);
+      
       const updatedNodes = [...nodes, newNode];
       setNodes(updatedNodes);
       setSelectedNode(newNode);
       saveToHistory({ nodes: updatedNodes, edges });
-      onNodeCounterChange(getCurrentNodeCounter()); // Add this line
+      
+      if (editorMode === 'pathNode') {
+        onNodeCounterChange(getCurrentNodeCounter());
+      }
     }
   };
 
@@ -433,7 +445,7 @@ const Canvas = ({
     
     setMousePos({ x: snappedX, y: snappedY });
 
-    if (isDragging && draggedNode && editorMode === 'node') {
+    if (isDragging && draggedNode && (editorMode === 'pathNode' || editorMode === 'roomNode')) {
       const updatedNodes = nodes.map(node => 
         node.id === draggedNode.id 
           ? { ...node, x: snappedX, y: snappedY }
@@ -481,6 +493,36 @@ const Canvas = ({
     }
   }, [overlayImage]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleWheelEvent = (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      // Calculate zoom
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.min(Math.max(zoom * zoomFactor, 0.1), 5);
+
+      // Adjust offset to zoom toward mouse position
+      const newOffset = {
+        x: mouseX - (mouseX - offset.x) * (newZoom / zoom),
+        y: mouseY - (mouseY - offset.y) * (newZoom / zoom)
+      };
+
+      setZoom(newZoom);
+      setOffset(newOffset);
+      // Immediately redraw after zoom changes
+      requestAnimationFrame(redrawCanvas);
+    };
+
+    canvas.addEventListener('wheel', handleWheelEvent, { passive: false });
+    return () => canvas.removeEventListener('wheel', handleWheelEvent);
+  }, [zoom, offset, redrawCanvas]);
+
   return (
     <canvas
       ref={canvasRef}
@@ -490,7 +532,6 @@ const Canvas = ({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      onWheel={handleWheel}
       className="absolute inset-0"
       style={{ cursor: isPanning ? 'grab' : 'default' }}
     />

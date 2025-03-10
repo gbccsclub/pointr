@@ -24,8 +24,14 @@ const extractNodeId = (nodeId) => parseInt(nodeId.replace('node-', ''));
 export const generateCypherExport = (nodes, edges) => {
   // Create nodes
   const nodeStatements = nodes.map(node => {
-    const numericId = extractNodeId(node.id);
-    return `CREATE (n${numericId}:Node {id: ${numericId}, label: '${node.label}', x: ${node.x}, y: ${node.y}})`;
+    if (node.type === 'pathNode') {
+      const numericId = parseInt(node.id.replace('node-', ''));
+      return `CREATE (n${numericId}:PathNode {id: ${numericId}, label: '${node.label}', x: ${node.x}, y: ${node.y}})`;
+    } else {
+      // Room node
+      const uuid = node.id.replace('room-', '');
+      return `CREATE (r${uuid}:RoomNode {id: '${uuid}', label: '${node.label}', x: ${node.x}, y: ${node.y}})`;
+    }
   });
 
   // Create bidirectional relationships with angles from both perspectives
@@ -34,14 +40,16 @@ export const generateCypherExport = (nodes, edges) => {
     const toNode = nodes.find(n => n.id === edge.to);
     const { angle, reverseAngle, distance } = calculateAngleAndDistance(fromNode, toNode);
     
-    const fromId = extractNodeId(edge.from);
-    const toId = extractNodeId(edge.to);
+    const fromId = fromNode.type === 'pathNode' ? 
+      `n${extractNodeId(edge.from)}` : 
+      `r${edge.from.replace('room-', '')}`;
+    const toId = toNode.type === 'pathNode' ? 
+      `n${extractNodeId(edge.to)}` : 
+      `r${edge.to.replace('room-', '')}`;
     
     return [
-      // Forward direction
-      `CREATE (n${fromId})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(n${toId})`,
-      // Reverse direction
-      `CREATE (n${fromId})<-[:CONNECTS_TO {angle: ${reverseAngle}, distance: ${distance}}]-(n${toId})`
+      `CREATE (${fromId})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(${toId})`,
+      `CREATE (${fromId})<-[:CONNECTS_TO {angle: ${reverseAngle}, distance: ${distance}}]-(${toId})`
     ];
   });
 
