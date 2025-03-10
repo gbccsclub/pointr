@@ -61,6 +61,16 @@ export const generateCypherExport = (nodes, edges) => {
       `n${edge.to}` : 
       `r${edge.to}`;
     
+    // If either node is a room node, check the direction
+    if (fromNode.type === 'roomNode' || toNode.type === 'roomNode') {
+      // Only create edge if it's from pathNode to roomNode
+      if (fromNode.type === 'pathNode' && toNode.type === 'roomNode') {
+        return [`CREATE (${fromId})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(${toId})`];
+      }
+      return []; // Skip edge creation for roomNode to pathNode
+    }
+
+    // For path node to path node connections, create bidirectional edges
     return [
       `CREATE (${fromId})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(${toId})`,
       `CREATE (${fromId})<-[:CONNECTS_TO {angle: ${reverseAngle}, distance: ${distance}}]-(${toId})`
