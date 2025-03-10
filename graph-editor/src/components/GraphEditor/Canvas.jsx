@@ -26,42 +26,72 @@ const Canvas = ({
   setSelectedEdge,
   nodeSize,
   onNodeCounterChange,
-  initialNodeCounter = 0
+  onRoomCounterChange,
+  initialNodeCounter = 0,
+  initialRoomCounter = 0
 }) => {
+  // Refs first
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
   const gridCanvasRef = useRef(null);
   const gridPatternRef = useRef(null);
+
+  // All useState hooks
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [draggedNode, setDraggedNode] = useState(null);
-  
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [lastPanPoint, setLastPanPoint] = useState(null);
 
+  // Get graph operations
   const { 
     createPathNode, 
     createRoomNode,
     snapToGridHelper, 
     calculateEdgeDistance, 
-    getCurrentNodeCounter, 
-    setNodeCounter 
+    getCurrentNodeCounter,
+    getCurrentRoomCounter,
+    setNodeCounter,
+    setRoomCounter
   } = useGraphOperations(
-    Number(initialNodeCounter), // Ensure it's a number
-    onNodeCounterChange
+    initialNodeCounter,
+    initialRoomCounter,
+    onNodeCounterChange,
+    onRoomCounterChange
   );
 
-  // Add effect to handle node counter initialization
+  // Initialize counters
   useEffect(() => {
-    const counter = Number(initialNodeCounter);
-    if (!isNaN(counter)) {
-      setNodeCounter(counter);
-    } else {
-      setNodeCounter(0);
+    setNodeCounter(initialNodeCounter);
+    setRoomCounter(initialRoomCounter);
+  }, [initialNodeCounter, initialRoomCounter, setNodeCounter, setRoomCounter]);
+
+  // Handle edge creation
+  const handleEdgeCreate = useCallback((fromNode, toNode) => {
+    // Create a unique edge ID
+    const edgeId = `${fromNode.id}-${toNode.id}`;
+    
+    // Check if edge already exists
+    const edgeExists = edges.some(e => 
+      (e.from === fromNode.id && e.to === toNode.id) ||
+      (e.from === toNode.id && e.to === fromNode.id)
+    );
+
+    if (!edgeExists) {
+      const newEdge = {
+        id: edgeId,
+        from: fromNode.id,
+        to: toNode.id
+      };
+
+      const updatedEdges = [...edges, newEdge];
+      setEdges(updatedEdges);
+      saveToHistory({ nodes, edges: updatedEdges });
+      onEdgeCreate?.(fromNode, toNode);
     }
-  }, [initialNodeCounter, setNodeCounter]);
+  }, [edges, nodes, setEdges, saveToHistory, onEdgeCreate]);
 
   // Convert screen coordinates to canvas coordinates
   const screenToCanvas = (screenX, screenY) => {
@@ -261,9 +291,9 @@ const Canvas = ({
     
     // Draw label with slight offset for better readability
     ctx.fillStyle = '#1e293b';
-    ctx.font = '11px system-ui';
+    ctx.font = '7px system-ui'; // Reduced from 9px to 7px
     ctx.textAlign = 'center';
-    ctx.fillText(node.label, node.x, node.y + (radius + 12));
+    ctx.fillText(node.label, node.x, node.y + (radius + 8)); // Reduced offset from 10 to 8
   };
 
   const drawEdge = (ctx, fromNode, toNode, edge) => {
@@ -303,9 +333,9 @@ const Canvas = ({
     const midY = (fromNode.y + toNode.y) / 2;
     
     ctx.fillStyle = '#666';
-    ctx.font = '12px Arial';
+    ctx.font = '7px Arial'; // Reduced from 9px to 7px
     ctx.textAlign = 'center';
-    ctx.fillText(Math.round(distance), midX, midY - 5);
+    ctx.fillText(Math.round(distance), midX, midY - 3); // Reduced offset from 4 to 3
   };
 
   const handleWheel = (e) => {
@@ -364,11 +394,11 @@ const Canvas = ({
     return distance <= 5;
   };
 
-  const handleMouseDown = (e) => {
+  const handleMouseDown = useCallback((e) => {
     const rect = canvasRef.current.getBoundingClientRect();
     const screenX = e.clientX - rect.left;
     const screenY = e.clientY - rect.top;
-    
+
     if (e.button === 1 || (e.button === 0 && e.getModifierState('Space'))) {
       setIsPanning(true);
       setLastPanPoint({ x: screenX, y: screenY });
@@ -388,7 +418,7 @@ const Canvas = ({
     if (clickedNode) {
       if (editorMode === 'edge' && isDrawing && drawingFrom) {
         if (clickedNode.id !== drawingFrom.id) {
-          onEdgeCreate(drawingFrom, clickedNode);
+          handleEdgeCreate(drawingFrom, clickedNode);
         }
         setIsDrawing(false);
         setDrawingFrom(null);
@@ -401,7 +431,6 @@ const Canvas = ({
         setDrawingFrom(clickedNode);
       }
       setSelectedEdge(null);
-      e.stopPropagation();
       return;
     }
 
@@ -411,7 +440,6 @@ const Canvas = ({
       if (clickedEdge) {
         setSelectedEdge(clickedEdge);
         setSelectedNode(null);
-        e.stopPropagation();
         return;
       }
     }
@@ -437,7 +465,20 @@ const Canvas = ({
         onNodeCounterChange(getCurrentNodeCounter());
       }
     }
-  };
+  }, [
+    editorMode,
+    isDrawing,
+    drawingFrom,
+    nodes,
+    zoom,
+    snapToGrid,
+    gridSize,
+    handleEdgeCreate,
+    setIsDrawing,
+    setDrawingFrom,
+    setSelectedNode,
+    setSelectedEdge
+  ]);
 
   const handleMouseMove = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
