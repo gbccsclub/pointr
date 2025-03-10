@@ -86,6 +86,19 @@ const GraphEditor = () => {
     setDrawingFrom(null);
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => setOverlayImage(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageToggle = (show) => {
+    setImageOpacity(show ? 0.5 : 0);
+  };
+
   useEffect(() => {
     const handleResize = () => {
       setCanvasSize({ width: window.innerWidth, height: window.innerHeight });
@@ -99,21 +112,17 @@ const GraphEditor = () => {
     <div className="fixed inset-0 overflow-hidden">
       {/* Top controls container */}
       <div className="fixed top-4 left-4 z-50">
-        <div className="flex flex-col gap-4">
-          <Controls 
-            handleUndo={handleUndoAction}
-            canUndo={canUndo}
-            selectedNode={selectedNode}
-            onDeleteNode={handleDeleteNode}
-          />
-          
-          <ImageOverlay 
-            image={overlayImage}
-            opacity={imageOpacity}
-            onImageUpload={setOverlayImage}
-            onOpacityChange={setImageOpacity}
-          />
-        </div>
+        <Controls 
+          handleUndo={handleUndoAction}
+          canUndo={canUndo}
+          selectedNode={selectedNode}
+          onDeleteNode={handleDeleteNode}
+          image={overlayImage}
+          opacity={imageOpacity}
+          onImageUpload={handleImageUpload}
+          onOpacityChange={setImageOpacity}
+          onImageToggle={handleImageToggle}
+        />
       </div>
 
       {/* Bottom controls container */}
