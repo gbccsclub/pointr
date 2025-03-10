@@ -5,6 +5,7 @@ import Canvas from './Canvas';
 import ImageOverlay from './ImageOverlay';
 import Instructions from './Instructions';
 import WorkspaceManager from './WorkspaceManager';
+import ModeControls from './ModeControls';
 import { useGraphHistory } from './hooks/useGraphHistory';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { 
@@ -271,6 +272,12 @@ const GraphEditor = () => {
           nodes={nodes}
           edges={edges}
           onImport={handleNeo4jImport}
+        />
+      </div>
+
+      {/* Mode controls container */}
+      <div className="fixed top-20 left-4 z-50">
+        <ModeControls 
           editorMode={editorMode}
           onModeChange={setEditorMode}
         />

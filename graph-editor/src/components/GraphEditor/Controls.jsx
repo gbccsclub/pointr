@@ -15,9 +15,11 @@ const Icons = {
   ),
   Connect: () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <circle cx="6" cy="12" r="3" strokeWidth={2} />
-      <circle cx="18" cy="12" r="3" strokeWidth={2} />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6" />
+      <g transform="rotate(45, 12, 12)">
+        <circle cx="6" cy="12" r="3" strokeWidth={2} />
+        <circle cx="18" cy="12" r="3" strokeWidth={2} />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6" />
+      </g>
     </svg>
   ),
   Room: () => (
@@ -58,9 +60,6 @@ const Controls = ({
   nodes,
   edges,
   onImport,
-  editorMode,
-  onModeChange,
-  // Remove onClearData from props
 }) => {
   const handleImageInputChange = (e) => {
     const file = e.target.files[0];
@@ -72,13 +71,6 @@ const Controls = ({
       };
       reader.readAsDataURL(file);
     }
-  };
-
-  const handleModeToggle = () => {
-    const modes = ['pathNode', 'edge', 'roomNode'];
-    const currentIndex = modes.indexOf(editorMode);
-    const nextIndex = (currentIndex + 1) % modes.length;
-    onModeChange(modes[nextIndex]);
   };
 
   return (
@@ -97,25 +89,6 @@ const Controls = ({
             title="Undo (Ctrl+Z)"
           >
             <Icons.Undo />
-          </button>
-
-          <button
-            onClick={handleModeToggle}
-            className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors flex items-center gap-1.5"
-            title={
-              editorMode === 'pathNode' ? 'Switch to Edge Mode' :
-              editorMode === 'edge' ? 'Switch to Room Node Mode' :
-              'Switch to Path Node Mode'
-            }
-          >
-            {editorMode === 'pathNode' ? <Icons.Connect /> :
-             editorMode === 'edge' ? <Icons.Room /> :
-             <Icons.Create />}
-            <span>
-              {editorMode === 'pathNode' ? 'Create Path' :
-               editorMode === 'edge' ? 'Connect' :
-               'Create Room'}
-            </span>
           </button>
 
           {(selectedNode || selectedEdge) && (
