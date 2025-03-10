@@ -98,7 +98,7 @@ const GraphEditor = () => {
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [editorMode, setEditorMode] = useState('pathNode');
-  const [nodeSize, setNodeSize] = useState(6);
+  const [nodeSize, setNodeSize] = useState(3);
 
   const { history, currentStateIndex, saveToHistory, handleUndo, canUndo } = useGraphHistory();
 

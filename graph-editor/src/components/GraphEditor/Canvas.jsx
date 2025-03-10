@@ -227,33 +227,43 @@ const Canvas = ({
   };
 
   const drawNode = (ctx, node, isSelected) => {
-    const radius = nodeSize; // Use the nodeSize prop instead of hardcoded value
+    const radius = nodeSize;
     
-    // Use explicit colors instead of CSS variables
-    const primaryBlue = '#2563eb';     // Default node color
-    const selectBlue = '#60a5fa';      // Light blue for selection
+    // Colors for different node types
+    const colors = {
+      pathNode: {
+        fill: '#2563eb',     // Blue for path nodes
+        selected: '#60a5fa'   // Light blue for selected path nodes
+      },
+      roomNode: {
+        fill: '#f43f5e',     // Light pinkish red for room nodes
+        selected: '#fb7185'   // Lighter pinkish red for selected room nodes
+      }
+    };
+    
+    const nodeColors = colors[node.type];
     
     // Draw main circle
     ctx.beginPath();
     ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
     
-    // Use primary blue for fill and add subtle shadow
+    // Use node type specific colors and add subtle shadow
     ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
     ctx.shadowBlur = 4;
-    ctx.fillStyle = primaryBlue;
+    ctx.fillStyle = nodeColors.fill;
     ctx.fill();
     
     // Draw border with selection indicator
     ctx.shadowColor = 'transparent';
-    ctx.strokeStyle = isSelected ? selectBlue : primaryBlue;
+    ctx.strokeStyle = isSelected ? nodeColors.selected : nodeColors.fill;
     ctx.lineWidth = 1.5;
     ctx.stroke();
     
     // Draw label with slight offset for better readability
-    ctx.fillStyle = '#1e293b'; // Text color
+    ctx.fillStyle = '#1e293b';
     ctx.font = '11px system-ui';
     ctx.textAlign = 'center';
-    ctx.fillText(node.label, node.x, node.y + (radius + 12)); // Adjust label position based on node size
+    ctx.fillText(node.label, node.x, node.y + (radius + 12));
   };
 
   const drawEdge = (ctx, fromNode, toNode, edge) => {
@@ -261,12 +271,15 @@ const Canvas = ({
     ctx.moveTo(fromNode.x, fromNode.y);
     ctx.lineTo(toNode.x, toNode.y);
     
-    // Highlight selected edge
+    // Determine edge color based on connected nodes
+    const isRoomConnection = fromNode.type === 'roomNode' || toNode.type === 'roomNode';
+    
+    // Highlight selected edge or use appropriate color based on connection type
     if (selectedEdge && edge.id === selectedEdge.id) {
-      ctx.strokeStyle = '#60a5fa';  // Light blue for selected edge
+      ctx.strokeStyle = isRoomConnection ? '#fb7185' : '#60a5fa';  // Light pinkish red/blue for selected edge
       ctx.lineWidth = 3;
     } else {
-      ctx.strokeStyle = '#93c5fd';  // Default light blue
+      ctx.strokeStyle = isRoomConnection ? '#fda4af' : '#93c5fd';  // Lighter pinkish red/blue for normal edge
       ctx.lineWidth = 2;
     }
     
@@ -277,7 +290,7 @@ const Canvas = ({
     ctx.beginPath();
     ctx.moveTo(fromNode.x, fromNode.y);
     ctx.lineTo(toPos.x, toPos.y);
-    ctx.strokeStyle = '#60a5fa';  // Light blue for temp edge
+    ctx.strokeStyle = fromNode.type === 'roomNode' ? '#fda4af' : '#60a5fa';  // Light pinkish red/blue based on node type
     ctx.lineWidth = 1;
     ctx.setLineDash([5, 5]);
     ctx.stroke();
