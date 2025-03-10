@@ -9,7 +9,7 @@ export const useGraphOperations = () => {
       id: `node-${id}`,
       x: x,
       y: y,
-      label: `Node ${id}`
+      label: `${id}`
     };
   }, []);
 
