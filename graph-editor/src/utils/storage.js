@@ -1,9 +1,10 @@
 const STORAGE_KEYS = {
   GRAPH_DATA: 'graph-editor-data',
-  OVERLAY_IMAGE: 'graph-editor-overlay'
+  OVERLAY_IMAGE: 'graph-editor-overlay',
+  NODE_COUNTER: 'graph-editor-node-counter'
 };
 
-export const saveToLocalStorage = (nodes, edges, overlayImage, imageOpacity) => {
+export const saveToLocalStorage = (nodes, edges, overlayImage, imageOpacity, nodeCounter) => {
   try {
     // Save graph data
     const graphData = {
@@ -19,6 +20,9 @@ export const saveToLocalStorage = (nodes, edges, overlayImage, imageOpacity) => 
     } else {
       localStorage.removeItem(STORAGE_KEYS.OVERLAY_IMAGE);
     }
+
+    // Save node counter
+    localStorage.setItem(STORAGE_KEYS.NODE_COUNTER, nodeCounter.toString());
   } catch (error) {
     console.error('Error saving to localStorage:', error);
   }
@@ -33,11 +37,15 @@ export const loadFromLocalStorage = () => {
     // Load overlay image
     const overlayImage = localStorage.getItem(STORAGE_KEYS.OVERLAY_IMAGE);
 
+    // Load node counter
+    const nodeCounter = parseInt(localStorage.getItem(STORAGE_KEYS.NODE_COUNTER)) || 0;
+
     return {
       nodes: graphData?.nodes || [],
       edges: graphData?.edges || [],
       overlayImage,
-      imageOpacity: graphData?.imageOpacity ?? 0.5
+      imageOpacity: graphData?.imageOpacity ?? 0.5,
+      nodeCounter
     };
   } catch (error) {
     console.error('Error loading from localStorage:', error);
@@ -45,7 +53,8 @@ export const loadFromLocalStorage = () => {
       nodes: [],
       edges: [],
       overlayImage: null,
-      imageOpacity: 0.5
+      imageOpacity: 0.5,
+      nodeCounter: 0
     };
   }
 };

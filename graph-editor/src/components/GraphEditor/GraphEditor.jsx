@@ -131,11 +131,15 @@ const GraphEditor = () => {
   // Add debounced save effect
   useEffect(() => {
     const saveTimeout = setTimeout(() => {
-      saveToLocalStorage(nodes, edges, overlayImage, imageOpacity);
+      saveToLocalStorage(nodes, edges, overlayImage, imageOpacity, Math.max(...nodes.map(n => parseInt(n.id.replace('node-', ''), 10)), -1) + 1);
     }, 1000); // Debounce for 1 second
 
     return () => clearTimeout(saveTimeout);
   }, [nodes, edges, overlayImage, imageOpacity]);
+
+  const handleNodeCounterChange = (counter) => {
+    saveToLocalStorage(nodes, edges, overlayImage, imageOpacity, counter);
+  };
 
   // Add clear data function
   const handleClearData = useCallback(() => {
@@ -237,6 +241,7 @@ const GraphEditor = () => {
         selectedEdge={selectedEdge}
         setSelectedEdge={setSelectedEdge}
         nodeSize={nodeSize}
+        onNodeCounterChange={handleNodeCounterChange}
       />
     </div>
   );

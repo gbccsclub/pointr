@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 
-export const useGraphOperations = () => {
-  const nodeIdCounter = useRef(0);
+export const useGraphOperations = (initialNodeCounter = 0) => {
+  const nodeIdCounter = useRef(initialNodeCounter);
 
   const createNode = useCallback((x, y) => {
     const id = nodeIdCounter.current++;
@@ -23,9 +23,14 @@ export const useGraphOperations = () => {
     return Math.sqrt(dx * dx + dy * dy);
   }, []);
 
+  const getCurrentNodeCounter = useCallback(() => {
+    return nodeIdCounter.current;
+  }, []);
+
   return {
     createNode,
     snapToGridHelper,
-    calculateEdgeDistance
+    calculateEdgeDistance,
+    getCurrentNodeCounter
   };
 };

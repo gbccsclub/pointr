@@ -25,6 +25,7 @@ const Canvas = ({
   selectedEdge,
   setSelectedEdge,
   nodeSize, // Add nodeSize prop
+  onNodeCounterChange, // Add this prop
 }) => {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
@@ -40,7 +41,9 @@ const Canvas = ({
   const [isPanning, setIsPanning] = useState(false);
   const [lastPanPoint, setLastPanPoint] = useState(null);
 
-  const { createNode, snapToGridHelper, calculateEdgeDistance } = useGraphOperations();
+  const { createNode, snapToGridHelper, calculateEdgeDistance, getCurrentNodeCounter } = useGraphOperations(
+    Math.max(...nodes.map(n => parseInt(n.id.replace('node-', ''), 10)), -1) + 1
+  );
 
   // Convert screen coordinates to canvas coordinates
   const screenToCanvas = (screenX, screenY) => {
@@ -396,6 +399,7 @@ const Canvas = ({
       setNodes(updatedNodes);
       setSelectedNode(newNode);
       saveToHistory({ nodes: updatedNodes, edges });
+      onNodeCounterChange(getCurrentNodeCounter()); // Add this line
     }
   };
 
