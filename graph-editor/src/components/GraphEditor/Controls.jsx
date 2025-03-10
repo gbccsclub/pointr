@@ -1,4 +1,5 @@
 import React from 'react';
+import Neo4jControls from './Neo4jControls';
 
 const Controls = ({
   handleUndo,
@@ -9,12 +10,15 @@ const Controls = ({
   opacity,
   onImageUpload,
   onOpacityChange,
-  onImageToggle
+  onImageToggle,
+  nodes,
+  edges,
+  onImport
 }) => {
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-xs">
       <div className="flex items-center gap-2">
-        {/* Left side: Undo and Delete buttons */}
+        {/* Left side: Action buttons */}
         <div className="flex gap-1.5">
           <button
             onClick={handleUndo}
@@ -36,6 +40,12 @@ const Controls = ({
               Delete
             </button>
           )}
+
+          <Neo4jControls
+            nodes={nodes}
+            edges={edges}
+            onImport={onImport}
+          />
         </div>
 
         {/* Divider */}

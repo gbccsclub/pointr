@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Controls from './Controls';
 import GridControls from './GridControls';
 import Canvas from './Canvas';
@@ -99,6 +99,15 @@ const GraphEditor = () => {
     setImageOpacity(show ? 0.5 : 0);
   };
 
+  const handleNeo4jImport = useCallback((importedNodes, importedEdges) => {
+    setNodes(importedNodes);
+    setEdges(importedEdges);
+    setSelectedNode(null);
+    setIsDrawing(false);
+    setDrawingFrom(null);
+    saveToHistory({ nodes: importedNodes, edges: importedEdges });
+  }, [saveToHistory]);
+
   useEffect(() => {
     const handleResize = () => {
       setCanvasSize({ width: window.innerWidth, height: window.innerHeight });
@@ -122,6 +131,9 @@ const GraphEditor = () => {
           onImageUpload={handleImageUpload}
           onOpacityChange={setImageOpacity}
           onImageToggle={handleImageToggle}
+          nodes={nodes}
+          edges={edges}
+          onImport={handleNeo4jImport}
         />
       </div>
 
