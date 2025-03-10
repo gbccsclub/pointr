@@ -133,10 +133,9 @@ const Canvas = ({
       }
     });
     
-    // Draw temporary edge while drawing
+    // Draw temporary edge while drawing - moved inside the transformed context
     if (isDrawing && drawingFrom) {
-      const canvasMousePos = screenToCanvas(mousePos.x, mousePos.y);
-      drawTempEdge(ctx, drawingFrom, canvasMousePos);
+      drawTempEdge(ctx, drawingFrom, mousePos);
     }
     
     // Draw nodes
@@ -339,6 +338,7 @@ const Canvas = ({
       return;
     }
 
+    // Convert screen coordinates to canvas coordinates
     const { x, y } = screenToCanvas(screenX, screenY);
     const snappedX = snapToGrid ? snapToGridHelper(x, gridSize) : x;
     const snappedY = snapToGrid ? snapToGridHelper(y, gridSize) : y;
