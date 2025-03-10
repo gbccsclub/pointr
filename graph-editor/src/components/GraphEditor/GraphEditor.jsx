@@ -96,7 +96,7 @@ const GraphEditor = () => {
   const [drawingFrom, setDrawingFrom] = useState(null);
   const [gridSize, setGridSize] = useState(10);
   const [showGrid, setShowGrid] = useState(true);
-  const [showDistances, setShowDistances] = useState(true);
+  const [showDistances, setShowDistances] = useState(false); // Changed from true to false
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [editorMode, setEditorMode] = useState('select');  // Change default mode to select
@@ -193,9 +193,11 @@ const GraphEditor = () => {
     setImageOpacity(show ? 0.5 : 0);
   };
 
-  const handleNeo4jImport = useCallback((importedNodes, importedEdges) => {
+  const handleNeo4jImport = useCallback((importedNodes, importedEdges, nodeCounter, roomCounter) => {
     setNodes(importedNodes);
     setEdges(importedEdges);
+    setNodeCounter(nodeCounter);
+    setRoomCounter(roomCounter);
     setSelectedNode(null);
     setIsDrawing(false);
     setDrawingFrom(null);
