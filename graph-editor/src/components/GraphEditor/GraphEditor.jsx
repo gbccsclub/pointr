@@ -6,10 +6,14 @@ import ImageOverlay from './ImageOverlay';
 import Instructions from './Instructions';
 import { useGraphHistory } from './hooks/useGraphHistory';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/storage';
 
 const GraphEditor = () => {
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
+  // Load initial state from localStorage
+  const initialState = loadFromLocalStorage();
+  
+  const [nodes, setNodes] = useState(initialState.nodes);
+  const [edges, setEdges] = useState(initialState.edges);
   const [selectedNode, setSelectedNode] = useState(null);
   const [selectedEdge, setSelectedEdge] = useState(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -19,10 +23,10 @@ const GraphEditor = () => {
   const [showDistances, setShowDistances] = useState(true);
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
-  const [overlayImage, setOverlayImage] = useState(null);
-  const [imageOpacity, setImageOpacity] = useState(0.5);
-  const [editorMode, setEditorMode] = useState('node'); // 'node' or 'edge'
-  const [nodeSize, setNodeSize] = useState(6); // 6 is the current default size
+  const [overlayImage, setOverlayImage] = useState(initialState.overlayImage);
+  const [imageOpacity, setImageOpacity] = useState(initialState.imageOpacity);
+  const [editorMode, setEditorMode] = useState('node');
+  const [nodeSize, setNodeSize] = useState(6);
 
   const { history, currentStateIndex, saveToHistory, handleUndo, canUndo } = useGraphHistory();
 
@@ -106,14 +110,9 @@ const GraphEditor = () => {
     }
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => setOverlayImage(e.target.result);
-      reader.readAsDataURL(file);
-    }
-  };
+  const handleImageUpload = useCallback((imageData) => {
+    setOverlayImage(imageData);
+  }, []);
 
   const handleImageToggle = (show) => {
     setImageOpacity(show ? 0.5 : 0);
@@ -126,7 +125,32 @@ const GraphEditor = () => {
     setIsDrawing(false);
     setDrawingFrom(null);
     saveToHistory({ nodes: importedNodes, edges: importedEdges });
+    // Storage will be handled by the effect
   }, [saveToHistory]);
+
+  // Add debounced save effect
+  useEffect(() => {
+    const saveTimeout = setTimeout(() => {
+      saveToLocalStorage(nodes, edges, overlayImage, imageOpacity);
+    }, 1000); // Debounce for 1 second
+
+    return () => clearTimeout(saveTimeout);
+  }, [nodes, edges, overlayImage, imageOpacity]);
+
+  // Add clear data function
+  const handleClearData = useCallback(() => {
+    if (window.confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+      setNodes([]);
+      setEdges([]);
+      setOverlayImage(null);
+      setImageOpacity(0.5);
+      setSelectedNode(null);
+      setSelectedEdge(null);
+      setIsDrawing(false);
+      setDrawingFrom(null);
+      localStorage.clear();
+    }
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -158,6 +182,7 @@ const GraphEditor = () => {
           onImport={handleNeo4jImport}
           editorMode={editorMode}
           onModeChange={setEditorMode}
+          onClearData={handleClearData}
         />
       </div>
 

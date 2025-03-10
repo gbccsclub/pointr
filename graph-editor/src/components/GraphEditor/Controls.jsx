@@ -52,8 +52,21 @@ const Controls = ({
   edges,
   onImport,
   editorMode,
-  onModeChange
+  onModeChange,
+  onClearData
 }) => {
+  const handleImageInputChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        onImageUpload(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-xs">
       <div className="flex items-center gap-2">
@@ -107,7 +120,7 @@ const Controls = ({
             <input
               type="file"
               accept="image/*"
-              onChange={onImageUpload}
+              onChange={handleImageInputChange}
               className="hidden"
             />
           </label>
@@ -130,7 +143,7 @@ const Controls = ({
                 max="1"
                 step="0.1"
                 value={opacity}
-                onChange={(e) => onOpacityChange(e.target.value)}
+                onChange={(e) => onOpacityChange(parseFloat(e.target.value))}
                 className="w-16 h-2 accent-blue-600"
                 title="Adjust Opacity"
               />
@@ -140,6 +153,16 @@ const Controls = ({
             </>
           )}
         </div>
+
+        {/* Add clear data button */}
+        <div className="h-4 w-px bg-gray-200"></div>
+        <button
+          onClick={onClearData}
+          className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded transition-colors"
+          title="Clear All Data"
+        >
+          <Icons.Delete />
+        </button>
       </div>
     </div>
   );

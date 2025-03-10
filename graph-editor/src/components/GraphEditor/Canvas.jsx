@@ -66,6 +66,11 @@ const Canvas = ({
         imageRef.current = img;
         redrawCanvas();
       };
+      img.onerror = () => {
+        console.error('Failed to load overlay image');
+        imageRef.current = null;
+        redrawCanvas();
+      };
     } else {
       imageRef.current = null;
       redrawCanvas();
@@ -125,19 +130,12 @@ const Canvas = ({
       const scaledWidth = img.width * baseScale;
       const scaledHeight = img.height * baseScale;
       
-      // Position image at (0,0) in canvas space
+      // Position image at center
       const x = -scaledWidth / 2;
       const y = -scaledHeight / 2;
       
       // Draw the image
-      ctx.drawImage(
-        img,
-        x,
-        y,
-        scaledWidth,
-        scaledHeight
-      );
-      
+      ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
       ctx.globalAlpha = 1;
     }
     
