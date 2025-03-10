@@ -131,6 +131,7 @@ export const generateCypherExport = (nodes, edges) => {
 
     const { angle, reverseAngle, distance } = calculateAngleAndDistance(fromNode, toNode);
 
+    // If both nodes are path nodes, create bidirectional connection
     if (fromNode.type === 'pathNode' && toNode.type === 'pathNode') {
       return [
         `CREATE (${edge.from})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(${edge.to})`,
@@ -138,9 +139,18 @@ export const generateCypherExport = (nodes, edges) => {
       ];
     }
 
-    return [
-      `CREATE (${edge.from})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(${edge.to})`
-    ];
+    // If one node is path and other is room, ensure direction is from path to room
+    if (fromNode.type === 'pathNode' && toNode.type === 'roomNode') {
+      return [
+        `CREATE (${edge.from})-[:CONNECTS_TO {angle: ${angle}, distance: ${distance}}]->(${edge.to})`
+      ];
+    } else if (fromNode.type === 'roomNode' && toNode.type === 'pathNode') {
+      return [
+        `CREATE (${toNode.id})-[:CONNECTS_TO {angle: ${reverseAngle}, distance: ${distance}}]->(${fromNode.id})`
+      ];
+    }
+
+    return [];
   });
 
   return [...nodeStatements, ...edgeStatements].join('\n');
