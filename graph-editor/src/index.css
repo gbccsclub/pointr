@@ -13,7 +13,7 @@
   --text: #1e293b;
   --text-light: #64748b;
   --border: #e2e8f0;
-  --grid: #e2e8f0;
+  --grid: #e2e8f055; /* Made much more transparent */
   --node: #2563eb;
   --node-selected: #22c55e;
   --edge: #64748b;

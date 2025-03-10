@@ -96,21 +96,14 @@ const Canvas = ({
   }, [nodes, edges, selectedNode, isDrawing, drawingFrom, mousePos, showGrid, showDistances, imageOpacity]);
 
   const drawGrid = (ctx) => {
-    ctx.strokeStyle = 'var(--grid)';
-    ctx.lineWidth = 0.5;
+    ctx.fillStyle = 'var(--grid)';
     
     for (let x = 0; x <= canvasSize.width; x += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvasSize.height);
-      ctx.stroke();
-    }
-    
-    for (let y = 0; y <= canvasSize.height; y += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvasSize.width, y);
-      ctx.stroke();
+      for (let y = 0; y <= canvasSize.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.arc(x, y, 0.5, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     }
   };
 
