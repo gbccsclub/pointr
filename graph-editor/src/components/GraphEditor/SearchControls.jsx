@@ -54,6 +54,13 @@ const SearchControls = ({ nodes, onNodeSelect }) => {
     setIsOpen(false);
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && filteredNodes.length > 0) {
+      e.preventDefault();
+      handleSelect(filteredNodes[0]);
+    }
+  };
+
   const toggleNodeType = () => {
     setNodeTypeFilter(current => current === 'pathNode' ? 'roomNode' : 'pathNode');
     setSearchTerm('');
@@ -64,7 +71,6 @@ const SearchControls = ({ nodes, onNodeSelect }) => {
     <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-xs">
       <div className="relative">
         <div className="flex gap-2">
-          {/* Single toggle button */}
           <button
             onClick={toggleNodeType}
             className="flex items-center px-2 py-1.5 rounded-md border bg-white hover:bg-gray-50 transition-colors"
@@ -73,7 +79,6 @@ const SearchControls = ({ nodes, onNodeSelect }) => {
             {nodeTypeFilter === 'pathNode' ? <Icons.PathNode /> : <Icons.Room />}
           </button>
 
-          {/* Search input */}
           <div className="relative flex-1">
             <input
               type="text"
@@ -82,6 +87,7 @@ const SearchControls = ({ nodes, onNodeSelect }) => {
                 setSearchTerm(e.target.value);
                 setIsOpen(true);
               }}
+              onKeyPress={handleKeyPress}
               onFocus={() => setIsOpen(true)}
               placeholder={`Search ${nodeTypeFilter === 'pathNode' ? 'path' : 'room'} nodes...`}
               className="w-full pl-8 pr-8 py-1.5 bg-white/90 backdrop-blur-sm rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
@@ -103,7 +109,6 @@ const SearchControls = ({ nodes, onNodeSelect }) => {
           </div>
         </div>
 
-        {/* Dropdown results */}
         {isOpen && filteredNodes.length > 0 && (
           <div className="absolute top-full left-0 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-48 overflow-y-auto z-50">
             {filteredNodes.map((node) => (
