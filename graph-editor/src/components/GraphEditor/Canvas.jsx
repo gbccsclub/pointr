@@ -28,7 +28,9 @@ const Canvas = ({
   onNodeCounterChange,
   onRoomCounterChange,
   initialNodeCounter = 0,
-  initialRoomCounter = 0
+  initialRoomCounter = 0,
+  viewportCenter,
+  setViewportCenter
 }) => {
   // Refs first
   const canvasRef = useRef(null);
@@ -600,6 +602,28 @@ const Canvas = ({
     canvas.addEventListener('wheel', handleWheelEvent, { passive: false });
     return () => canvas.removeEventListener('wheel', handleWheelEvent);
   }, [zoom, offset, redrawCanvas]);
+
+  // Add this effect to handle viewport centering
+  useEffect(() => {
+    if (viewportCenter) {
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const centerX = canvasRect.width / 2;
+      const centerY = canvasRect.height / 2;
+      
+      // Calculate new offset to center the node
+      const newOffset = {
+        x: centerX - (viewportCenter.x * zoom),
+        y: centerY - (viewportCenter.y * zoom)
+      };
+      
+      setOffset(newOffset);
+      // Clear the viewport center request after handling it
+      setViewportCenter(null);
+      
+      // Trigger a redraw
+      requestAnimationFrame(redrawCanvas);
+    }
+  }, [viewportCenter, zoom]);
 
   return (
     <canvas

@@ -6,6 +6,7 @@ import ImageOverlay from './ImageOverlay';
 import Instructions from './Instructions';
 import WorkspaceManager from './WorkspaceManager';
 import ModeControls from './ModeControls';
+import SearchControls from './SearchControls';
 import { useGraphHistory } from './hooks/useGraphHistory';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { 
@@ -264,16 +265,29 @@ const GraphEditor = () => {
     }
   }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity, nodeCounter]);
 
+  // Add this state for viewport control
+  const [viewportCenter, setViewportCenter] = useState(null);
+
+  // Add this handler function
+  const handleNodeSearch = (node) => {
+    setSelectedNode(node);
+    setViewportCenter({ x: node.x, y: node.y });
+  };
+
   return (
     <div className="fixed inset-0 overflow-hidden">
       {/* Add WorkspaceManager to the top */}
-      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex gap-2">
         <WorkspaceManager
           workspaces={workspaces}
           currentWorkspace={currentWorkspace}
           onWorkspaceChange={handleWorkspaceChange}
           onWorkspaceCreate={handleWorkspaceCreate}
           onWorkspaceDelete={handleWorkspaceDelete}
+        />
+        <SearchControls
+          nodes={nodes}
+          onNodeSelect={handleNodeSearch}
         />
       </div>
 
@@ -362,6 +376,8 @@ const GraphEditor = () => {
         initialRoomCounter={roomCounter}
         onNodeCounterChange={handleNodeCounterChange}
         onRoomCounterChange={handleRoomCounterChange}
+        viewportCenter={viewportCenter}
+        setViewportCenter={setViewportCenter}
       />
     </div>
   );
