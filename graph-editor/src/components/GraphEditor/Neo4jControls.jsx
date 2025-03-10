@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { generateCypherExport, parseCypherImport } from '../../utils/neo4jConverter';
 
+// Add Icons object with Cancel icon
+const Icons = {
+  Cancel: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  ),
+};
+
 const Neo4jControls = ({ nodes, edges, onImport }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [cypherQuery, setCypherQuery] = useState('');
@@ -74,11 +83,10 @@ const Neo4jControls = ({ nodes, edges, onImport }) => {
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
+                className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"
+                title="Close"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <Icons.Cancel />
               </button>
             </div>
 
