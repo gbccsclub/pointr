@@ -1,0 +1,30 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        const a = "100000011";
+        const b = "000100100";
+
+        // convert a and b from bits to numbers
+        let numA = parseInt(a, 2);
+        let numB = parseInt(b, 2);
+
+        const mask = (1 << 8) - 1;
+
+        numA = numA & mask;
+        numB = numB & mask;
+
+        numA = numA << 8;
+
+        const result = numA | numB;
+
+        console.log(result.toString(2));
+    </script>
+</body>
+</html>
