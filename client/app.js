@@ -1,4 +1,6 @@
-﻿export default class App {
+﻿import { isMostSignificantTag, idToTags, tagsToId } from './utils.js';
+
+export default class App {
     constructor() {
         this.apriltag = null;
         this.detections = [];
@@ -39,6 +41,43 @@
             this.visualizeDetectionCorners(detection);
             this.visualizeDetectionId(detection);
         });
+
+        if (detections.length !== 2) return;
+
+        const [tag1, tag2] = detections;
+        const id = tagsToId(tag1.id, tag2.id);
+        this.visualizeFinalId(tag1, tag2, id);
+    }
+
+    visualizeFinalId(tag1, tag2, id) {
+        const radius1 = isMostSignificantTag(tag1.id) ? 10: 5; 
+        this.ctx.beginPath();
+        this.ctx.arc(tag1.center.x, tag1.center.y, radius1, 0, Math.PI * 2);
+        this.ctx.fillStyle = isMostSignificantTag(tag1.id) ? 'red' : 'blue';
+        this.ctx.fill();
+        this.ctx.closePath();
+
+        const radius2 = isMostSignificantTag(tag2.id) ? 10: 5; 
+        this.ctx.beginPath();
+        this.ctx.arc(tag2.center.x, tag2.center.y, radius2, 0, Math.PI * 2);
+        this.ctx.fillStyle = isMostSignificantTag(tag2.id) ? 'red' : 'blue';
+        this.ctx.fill();
+        this.ctx.closePath();
+
+        const { x, y } = { 
+            x: (tag1.center.x + tag2.center.x) / 2,
+            y: (tag1.center.y + tag2.center.y) / 2,
+        };
+        this.ctx.font = '24px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillText(id, x, y);
+    }
+
+    visualizeFinalIdText(tag1, tag2, id) {
+        const { x, y } = tag1.center;
+        this.ctx.font = '24px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillText(id, x, y);
     }
 
     visualizeDetection(detection) {
@@ -69,7 +108,7 @@
         const { x, y } = detection.center;
         this.ctx.font = '24px Arial';
         this.ctx.fillStyle = 'white';
-        this.ctx.fillText(detection.id, x, y);
+        this.ctx.fillText(detection.id , x, y);
     }
 
     displayWebcamVideo() {
