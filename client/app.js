@@ -5,7 +5,7 @@
 
         this.video = document.createElement("video");
         this.video.autoplay = true;
-        navigator.mediaDevices.getUserMedia({ 
+        navigator.mediaDevices.getUserMedia({
             video: true,
             // For mobile devices, use the following constraints to access the back camera
             // { facingMode: { exact: "environment" }},
@@ -29,20 +29,23 @@
         this.displayWebcamVideo();
         const grayscalePixels = this.getGrayscaleFrame();
         // rendering code has to be before detection because of the await call
-        if (this.detections.length > 0) this.onDetection(this.detections[0]);
+        if (this.detections.length > 0) this.onDetection(this.detections);
         this.detections = await this.apriltag.detect(grayscalePixels, this.ctx.canvas.width, this.ctx.canvas.height);
     }
 
-    onDetection(detection) {
-        this.visualizeDetection(detection);
-        this.visualizeDetectionCorners(detection);
+    onDetection(detections) {
+        detections.forEach(detection => {
+            this.visualizeDetection(detection);
+            this.visualizeDetectionCorners(detection);
+            this.visualizeDetectionId(detection);
+        });
     }
 
     visualizeDetection(detection) {
         const corners = detection.corners;
         this.ctx.beginPath();
         this.ctx.moveTo(corners[0].x, corners[0].y);
-        corners.forEach(({x, y}) => {
+        corners.forEach(({ x, y }) => {
             this.ctx.lineTo(x, y);
         });
         this.ctx.lineTo(corners[0].x, corners[0].y);
@@ -60,6 +63,13 @@
         corners.forEach((corner, index) => {
             this.ctx.fillText(index, corner.x, corner.y);
         });
+    }
+
+    visualizeDetectionId(detection) {
+        const { x, y } = detection.center;
+        this.ctx.font = '24px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillText(detection.id, x, y);
     }
 
     displayWebcamVideo() {
