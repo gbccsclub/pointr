@@ -109,13 +109,7 @@ export const parseCypherImport = (cypherQuery) => {
 export const generateCypherExport = (nodes, edges) => {
   const nodeStatements = nodes.map(node => {
     const nodeType = node.type === 'pathNode' ? 'PathNode' : 'RoomNode';
-    return `CREATE (${node.id}:${nodeType} {
-      id: ${parseInt(node.id.substring(1))},
-      label: '${node.label}',
-      type: '${node.type}',
-      x: ${Math.round(node.x)},
-      y: ${Math.round(node.y)}
-    })`;
+    return `CREATE (${node.id}:${nodeType} { id: ${parseInt(node.id.substring(1))} })`;
   });
 
   const processedEdges = new Set();
