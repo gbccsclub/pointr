@@ -194,18 +194,6 @@ const GraphEditor = () => {
     setImageOpacity(show ? 0.5 : 0);
   };
 
-  const handleNeo4jImport = useCallback((importedNodes, importedEdges, nodeCounter, roomCounter) => {
-    setNodes(importedNodes);
-    setEdges(importedEdges);
-    setNodeCounter(nodeCounter);
-    setRoomCounter(roomCounter);
-    setSelectedNode(null);
-    setIsDrawing(false);
-    setDrawingFrom(null);
-    saveToHistory({ nodes: importedNodes, edges: importedEdges });
-    // Storage will be handled by the effect
-  }, [saveToHistory]);
-
   // Add debounced save effect
   useEffect(() => {
     if (currentWorkspace) {
@@ -310,7 +298,6 @@ const GraphEditor = () => {
           onImageToggle={handleImageToggle}
           nodes={nodes}
           edges={edges}
-          onImport={handleNeo4jImport}
         />
       </div>
 
