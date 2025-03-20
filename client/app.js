@@ -1,11 +1,13 @@
-﻿export default class App {
+﻿import { isMostSignificantTag, idToTags, tagsToId } from './utils.js';
+
+export default class App {
     constructor() {
         this.apriltag = null;
         this.detections = [];
 
         this.video = document.createElement("video");
         this.video.autoplay = true;
-        navigator.mediaDevices.getUserMedia({ 
+        navigator.mediaDevices.getUserMedia({
             video: true,
             // For mobile devices, use the following constraints to access the back camera
             // { facingMode: { exact: "environment" }},
@@ -29,20 +31,60 @@
         this.displayWebcamVideo();
         const grayscalePixels = this.getGrayscaleFrame();
         // rendering code has to be before detection because of the await call
-        if (this.detections.length > 0) this.onDetection(this.detections[0]);
+        if (this.detections.length > 0) this.onDetection(this.detections);
         this.detections = await this.apriltag.detect(grayscalePixels, this.ctx.canvas.width, this.ctx.canvas.height);
     }
 
-    onDetection(detection) {
-        this.visualizeDetection(detection);
-        this.visualizeDetectionCorners(detection);
+    onDetection(detections) {
+        detections.forEach(detection => {
+            this.visualizeDetection(detection);
+            this.visualizeDetectionCorners(detection);
+            this.visualizeDetectionId(detection);
+        });
+
+        if (detections.length !== 2) return;
+
+        const [tag1, tag2] = detections;
+        const id = tagsToId(tag1.id, tag2.id);
+        this.visualizeFinalId(tag1, tag2, id);
+    }
+
+    visualizeFinalId(tag1, tag2, id) {
+        const radius1 = isMostSignificantTag(tag1.id) ? 10: 5; 
+        this.ctx.beginPath();
+        this.ctx.arc(tag1.center.x, tag1.center.y, radius1, 0, Math.PI * 2);
+        this.ctx.fillStyle = isMostSignificantTag(tag1.id) ? 'red' : 'blue';
+        this.ctx.fill();
+        this.ctx.closePath();
+
+        const radius2 = isMostSignificantTag(tag2.id) ? 10: 5; 
+        this.ctx.beginPath();
+        this.ctx.arc(tag2.center.x, tag2.center.y, radius2, 0, Math.PI * 2);
+        this.ctx.fillStyle = isMostSignificantTag(tag2.id) ? 'red' : 'blue';
+        this.ctx.fill();
+        this.ctx.closePath();
+
+        const { x, y } = { 
+            x: (tag1.center.x + tag2.center.x) / 2,
+            y: (tag1.center.y + tag2.center.y) / 2,
+        };
+        this.ctx.font = '24px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillText(id, x, y);
+    }
+
+    visualizeFinalIdText(tag1, tag2, id) {
+        const { x, y } = tag1.center;
+        this.ctx.font = '24px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillText(id, x, y);
     }
 
     visualizeDetection(detection) {
         const corners = detection.corners;
         this.ctx.beginPath();
         this.ctx.moveTo(corners[0].x, corners[0].y);
-        corners.forEach(({x, y}) => {
+        corners.forEach(({ x, y }) => {
             this.ctx.lineTo(x, y);
         });
         this.ctx.lineTo(corners[0].x, corners[0].y);
@@ -60,6 +102,13 @@
         corners.forEach((corner, index) => {
             this.ctx.fillText(index, corner.x, corner.y);
         });
+    }
+
+    visualizeDetectionId(detection) {
+        const { x, y } = detection.center;
+        this.ctx.font = '24px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillText(detection.id , x, y);
     }
 
     displayWebcamVideo() {
