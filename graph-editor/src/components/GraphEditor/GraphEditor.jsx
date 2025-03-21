@@ -9,6 +9,7 @@ import ModeControls from './ModeControls';
 import SearchControls from './SearchControls';
 import { useGraphHistory } from './hooks/useGraphHistory';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useHighlight } from './hooks/useHighlight';
 import { 
   saveToWorkspace, 
   loadFromWorkspace, 
@@ -32,6 +33,7 @@ const GraphEditor = () => {
   const [imageOpacity, setImageOpacity] = useState(0.5);
   const [nodeCounter, setNodeCounter] = useState(0);
   const [roomCounter, setRoomCounter] = useState(0);
+  const { highlightedNode, setHighlightedNode, highlightOpacity } = useHighlight();
   
   // Load current workspace on mount
   useEffect(() => {
@@ -368,6 +370,8 @@ const GraphEditor = () => {
         onRoomCounterChange={handleRoomCounterChange}
         viewportCenter={viewportCenter}
         setViewportCenter={setViewportCenter}
+        highlightedNode={highlightedNode}
+        highlightOpacity={highlightOpacity}
       />
     </div>
   );
