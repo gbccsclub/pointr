@@ -4,6 +4,7 @@ import { useCoordinateConversion } from './hooks/useCoordinateConversion';
 import { useEdgeOperations } from './hooks/useEdgeOperations';
 import { useMouseInteractions } from './hooks/useMouseInteractions';
 import { useZoomAndPan } from './hooks/useZoomAndPan';
+import { useHighlight } from './hooks/useHighlight';
 import CanvasRenderer from './CanvasRenderer';
 
 const Canvas = ({
@@ -48,8 +49,6 @@ const Canvas = ({
   const [draggedNode, setDraggedNode] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [highlightedNode, setHighlightedNode] = useState(null);
-  const [highlightOpacity, setHighlightOpacity] = useState(1);
 
   // Get graph operations
   const { 
@@ -86,6 +85,9 @@ const Canvas = ({
     canvasSize
   });
 
+  // Get highlight operations
+  const { highlightedNode, setHighlightedNode, highlightOpacity } = useHighlight();
+
   // Initialize counters
   useEffect(() => {
     setNodeCounter(initialNodeCounter);
@@ -105,40 +107,6 @@ const Canvas = ({
       imageRef.current = null;
     }
   }, [overlayImage, centerImage]);
-
-  // Add effect to handle highlight blink and fade
-  useEffect(() => {
-    if (!highlightedNode) return;
-    
-    // Blink 3 times before starting fade
-    let blinkCount = 0;
-    const blinkInterval = setInterval(() => {
-      setHighlightOpacity(prev => prev === 1 ? 0 : 1);
-      blinkCount++;
-      
-      if (blinkCount >= 6) { // 3 full blinks (on-off cycles)
-        clearInterval(blinkInterval);
-        setHighlightOpacity(1);
-        
-        // Start fade out after blinking
-        const fadeInterval = setInterval(() => {
-          setHighlightOpacity(prev => {
-            if (prev <= 0) {
-              clearInterval(fadeInterval);
-              setHighlightedNode(null);
-              return 0;
-            }
-            return prev - 0.05;
-          });
-        }, 50); // Fade update every 50ms
-      }
-    }, 200); // Blink every 200ms
-    
-    // Cleanup intervals
-    return () => {
-      clearInterval(blinkInterval);
-    };
-  }, [highlightedNode]);
 
   // Get mouse interaction handlers
   const { handleMouseDown, handleMouseMove, handleMouseUp } = useMouseInteractions({
