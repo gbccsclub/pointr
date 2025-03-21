@@ -5,6 +5,7 @@ import { useEdgeOperations } from './hooks/useEdgeOperations';
 import { useMouseInteractions } from './hooks/useMouseInteractions';
 import { useZoomAndPan } from './hooks/useZoomAndPan';
 import { useHighlight } from './hooks/useHighlight';
+import { useImageLoader } from './hooks/useImageLoader';
 import CanvasRenderer from './CanvasRenderer';
 
 const Canvas = ({
@@ -40,7 +41,6 @@ const Canvas = ({
 }) => {
   // Refs first
   const canvasRef = useRef(null);
-  const imageRef = useRef(null);
   const gridPatternRef = useRef(null);
 
   // All useState hooks
@@ -88,25 +88,14 @@ const Canvas = ({
   // Get highlight operations
   const { highlightedNode, setHighlightedNode, highlightOpacity } = useHighlight();
 
+  // Get image loader operations
+  const imageRef = useImageLoader({ overlayImage, centerImage });
+
   // Initialize counters
   useEffect(() => {
     setNodeCounter(initialNodeCounter);
     setRoomCounter(initialRoomCounter);
   }, [initialNodeCounter, initialRoomCounter, setNodeCounter, setRoomCounter]);
-
-  // Handle image loading and centering
-  useEffect(() => {
-    if (overlayImage) {
-      const img = new Image();
-      img.src = overlayImage;
-      img.onload = () => {
-        centerImage(img);
-        imageRef.current = img;
-      };
-    } else {
-      imageRef.current = null;
-    }
-  }, [overlayImage, centerImage]);
 
   // Get mouse interaction handlers
   const { handleMouseDown, handleMouseMove, handleMouseUp } = useMouseInteractions({
