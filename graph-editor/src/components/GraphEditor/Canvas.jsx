@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useGraphOperations } from './hooks/useGraphOperations';
 import { useCoordinateConversion } from './hooks/useCoordinateConversion';
 import { useEdgeOperations } from './hooks/useEdgeOperations';
-import { useDrawingOperations } from './hooks/useDrawingOperations';
+import CanvasRenderer from './CanvasRenderer';
 
 const Canvas = ({
   nodes,
@@ -74,85 +74,11 @@ const Canvas = ({
   // Get edge operations
   const { handleEdgeCreate } = useEdgeOperations(edges, nodes, setEdges, saveToHistory, onEdgeCreate);
 
-  // Get drawing operations
-  const {
-    drawGrid,
-    drawNode,
-    drawEdge,
-    drawTempEdge,
-    drawDistance,
-    redrawCanvas,
-    createGridPattern
-  } = useDrawingOperations({
-    canvasRef,
-    gridPatternRef,
-    imageRef,
-    nodes,
-    edges,
-    selectedNode,
-    isDrawing,
-    drawingFrom,
-    mousePos,
-    showGrid,
-    showDistances,
-    imageOpacity,
-    zoom,
-    offset,
-    gridSize,
-    nodeSize,
-    selectedEdge,
-    highlightedNode,
-    highlightOpacity,
-    calculateEdgeDistance
-  });
-
   // Initialize counters
   useEffect(() => {
     setNodeCounter(initialNodeCounter);
     setRoomCounter(initialRoomCounter);
   }, [initialNodeCounter, initialRoomCounter, setNodeCounter, setRoomCounter]);
-
-  useEffect(() => {
-    createGridPattern();
-  }, [gridSize, zoom, showGrid, createGridPattern]);
-
-  useEffect(() => {
-    redrawCanvas();
-  }, [
-    nodes, 
-    edges, 
-    selectedNode, 
-    isDrawing, 
-    drawingFrom, 
-    mousePos, 
-    showGrid, 
-    showDistances, 
-    imageOpacity,
-    zoom,
-    offset
-  ]);
-
-  const handleWheel = (e) => {
-    e.preventDefault();
-    const rect = canvasRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    // Calculate zoom
-    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.min(Math.max(zoom * zoomFactor, 0.1), 5);
-
-    // Adjust offset to zoom toward mouse position
-    const newOffset = {
-      x: mouseX - (mouseX - offset.x) * (newZoom / zoom),
-      y: mouseY - (mouseY - offset.y) * (newZoom / zoom)
-    };
-
-    setZoom(newZoom);
-    setOffset(newOffset);
-    // Immediately redraw after zoom changes
-    requestAnimationFrame(redrawCanvas);
-  };
 
   const isPointOnEdge = (point, edge) => {
     const fromNode = nodes.find(n => n.id === edge.from);
@@ -287,7 +213,6 @@ const Canvas = ({
         y: offset.y + dy
       });
       setLastPanPoint({ x: screenX, y: screenY });
-      requestAnimationFrame(redrawCanvas);
       return;
     }
 
@@ -306,12 +231,6 @@ const Canvas = ({
           : node
       );
       setNodes(updatedNodes);
-      requestAnimationFrame(redrawCanvas);
-    }
-
-    // Handle edge drawing preview
-    if (isDrawing && drawingFrom) {
-      requestAnimationFrame(redrawCanvas);
     }
   };
 
@@ -329,14 +248,6 @@ const Canvas = ({
 
     setIsDragging(false);
     setDraggedNode(null);
-
-    if (isDrawing && !draggedNode) {
-      const rect = canvasRef.current.getBoundingClientRect();
-      const { x, y } = screenToCanvas(
-        e.clientX - rect.left,
-        e.clientY - rect.top
-      );
-    }
   };
 
   // Add this effect to handle initial image centering
@@ -357,11 +268,9 @@ const Canvas = ({
         });
         
         imageRef.current = img;
-        redrawCanvas();
       };
     } else {
       imageRef.current = null;
-      redrawCanvas();
     }
   }, [overlayImage]);
 
@@ -387,13 +296,11 @@ const Canvas = ({
 
       setZoom(newZoom);
       setOffset(newOffset);
-      // Immediately redraw after zoom changes
-      requestAnimationFrame(redrawCanvas);
     };
 
     canvas.addEventListener('wheel', handleWheelEvent, { passive: false });
     return () => canvas.removeEventListener('wheel', handleWheelEvent);
-  }, [zoom, offset, redrawCanvas]);
+  }, [zoom, offset]);
 
   // Add this effect to handle viewport centering
   const SEARCH_ZOOM_LEVEL = 4; // You can adjust this value to your preferred zoom level
@@ -418,9 +325,6 @@ const Canvas = ({
       // Clear the viewport center immediately after applying the transformation
       // This allows the user to freely pan/zoom afterward
       setViewportCenter(null);
-      
-      // Trigger a redraw
-      requestAnimationFrame(redrawCanvas);
     }
   }, [viewportCenter]);
 
@@ -459,17 +363,41 @@ const Canvas = ({
   }, [highlightedNode]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={canvasSize.width}
-      height={canvasSize.height}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      className="absolute inset-0"
-      style={{ cursor: isPanning ? 'grab' : 'default' }}
-    />
+    <>
+      <CanvasRenderer
+        canvasRef={canvasRef}
+        gridPatternRef={gridPatternRef}
+        imageRef={imageRef}
+        nodes={nodes}
+        edges={edges}
+        selectedNode={selectedNode}
+        isDrawing={isDrawing}
+        drawingFrom={drawingFrom}
+        mousePos={mousePos}
+        showGrid={showGrid}
+        showDistances={showDistances}
+        imageOpacity={imageOpacity}
+        zoom={zoom}
+        offset={offset}
+        gridSize={gridSize}
+        nodeSize={nodeSize}
+        selectedEdge={selectedEdge}
+        highlightedNode={highlightedNode}
+        highlightOpacity={highlightOpacity}
+        calculateEdgeDistance={calculateEdgeDistance}
+      />
+      <canvas
+        ref={canvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        className="absolute inset-0"
+        style={{ cursor: isPanning ? 'grab' : 'default' }}
+      />
+    </>
   );
 };
 
