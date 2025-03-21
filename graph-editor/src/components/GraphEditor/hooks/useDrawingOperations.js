@@ -85,8 +85,7 @@ export const useDrawingOperations = ({
     
     // Draw highlight for searched node
     if (highlightedNode && 
-        node.x === highlightedNode.x && 
-        node.y === highlightedNode.y && 
+        node.id === highlightedNode.id && 
         highlightOpacity > 0) {
       ctx.beginPath();
       ctx.arc(node.x, node.y, radius + 4, 0, 2 * Math.PI);
