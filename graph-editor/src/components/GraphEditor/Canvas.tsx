@@ -8,7 +8,53 @@ import { useHighlight } from './hooks/useHighlight';
 import { useImageLoader } from './hooks/useImageLoader';
 import CanvasRenderer from './CanvasRenderer';
 
-const Canvas = ({
+interface Node {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  label: string;
+}
+
+interface Edge {
+  id: string;
+  from: string;
+  to: string;
+}
+
+interface CanvasProps {
+  nodes: Node[];
+  edges: Edge[];
+  selectedNode: Node | null;
+  isDrawing: boolean;
+  drawingFrom: Node | null;
+  gridSize: number;
+  showGrid: boolean;
+  showDistances: boolean;
+  snapToGrid: boolean;
+  canvasSize: { width: number; height: number };
+  setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
+  setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
+  setSelectedNode: React.Dispatch<React.SetStateAction<Node | null>>;
+  setIsDrawing: React.Dispatch<React.SetStateAction<boolean>>;
+  setDrawingFrom: React.Dispatch<React.SetStateAction<Node | null>>;
+  saveToHistory: (state: { nodes: Node[]; edges: Edge[] }) => void;
+  onEdgeCreate: (fromNode: Node, toNode: Node) => void;
+  overlayImage: string | null;
+  imageOpacity: number;
+  editorMode: string;
+  selectedEdge: Edge | null;
+  setSelectedEdge: React.Dispatch<React.SetStateAction<Edge | null>>;
+  nodeSize: number;
+  onNodeCounterChange: (newCounter: number) => void;
+  onRoomCounterChange: (newCounter: number) => void;
+  initialNodeCounter?: number;
+  initialRoomCounter?: number;
+  viewportCenter: { x: number; y: number } | null;
+  setViewportCenter: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
+}
+
+const Canvas: React.FC<CanvasProps> = ({
   nodes,
   edges,
   selectedNode,
@@ -40,15 +86,15 @@ const Canvas = ({
   setViewportCenter
 }) => {
   // Refs first
-  const canvasRef = useRef(null);
-  const gridPatternRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const gridPatternRef = useRef<CanvasPattern | null>(null);
 
   // All useState hooks
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [draggedNode, setDraggedNode] = useState(null);
+  const [draggedNode, setDraggedNode] = useState<Node | null>(null);
   const [zoom, setZoom] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Get graph operations
   const { 

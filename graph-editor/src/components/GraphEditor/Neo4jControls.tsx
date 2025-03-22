@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { generateCypherExport } from '../../utils/neo4jConverter';
 
+interface Neo4jControlsProps {
+  nodes: Array<{ id: string; type: string }>;
+  edges: Array<{ from: string; to: string }>;
+}
+
 // Add Icons object with Neo4j and Cancel icons
 const Icons = {
   Neo4j: () => (
@@ -17,7 +22,7 @@ const Icons = {
   ),
 };
 
-const Neo4jControls = ({ nodes, edges }) => {
+const Neo4jControls: React.FC<Neo4jControlsProps> = ({ nodes, edges }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [cypherQuery, setCypherQuery] = useState('');
 

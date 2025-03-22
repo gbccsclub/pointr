@@ -50,7 +50,24 @@ const Icons = {
   ),
 };
 
-const Controls = ({
+interface ControlsProps {
+  handleUndo: () => void;
+  canUndo: boolean;
+  selectedNode: any;
+  selectedEdge: any;
+  onDeleteNode: () => void;
+  onDeleteEdge: () => void;
+  image: string | null;
+  opacity: number;
+  onImageUpload: (dataUrl: string) => void;
+  onOpacityChange: (opacity: number) => void;
+  onImageToggle: (show: boolean) => void;
+  nodes: any[];
+  edges: any[];
+  onImport: () => void;
+}
+
+const Controls: React.FC<ControlsProps> = ({
   handleUndo,
   canUndo,
   selectedNode,
@@ -66,12 +83,12 @@ const Controls = ({
   edges,
   onImport,
 }) => {
-  const handleImageInputChange = (e) => {
-    const file = e.target.files[0];
+  const handleImageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const dataUrl = e.target.result;
+        const dataUrl = e.target?.result as string;
         onImageUpload(dataUrl);
       };
       reader.readAsDataURL(file);

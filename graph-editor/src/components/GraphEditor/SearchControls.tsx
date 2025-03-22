@@ -25,11 +25,24 @@ const Icons = {
   ),
 };
 
-const SearchControls = ({ nodes, onNodeSelect }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredNodes, setFilteredNodes] = useState([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [nodeTypeFilter, setNodeTypeFilter] = useState('pathNode');
+interface Node {
+  id: string;
+  type: string;
+  label?: string;
+  x: number;
+  y: number;
+}
+
+interface SearchControlsProps {
+  nodes: Node[];
+  onNodeSelect: (node: Node) => void;
+}
+
+const SearchControls: React.FC<SearchControlsProps> = ({ nodes, onNodeSelect }) => {
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [filteredNodes, setFilteredNodes] = useState<Node[]>([]);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [nodeTypeFilter, setNodeTypeFilter] = useState<string>('pathNode');
 
   useEffect(() => {
     if (searchTerm.trim() === '') {
@@ -48,13 +61,13 @@ const SearchControls = ({ nodes, onNodeSelect }) => {
     setFilteredNodes(filtered);
   }, [searchTerm, nodes, nodeTypeFilter]);
 
-  const handleSelect = (node) => {
+  const handleSelect = (node: Node) => {
     onNodeSelect(node);
     setSearchTerm('');
     setIsOpen(false);
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && filteredNodes.length > 0) {
       e.preventDefault();
       handleSelect(filteredNodes[0]);

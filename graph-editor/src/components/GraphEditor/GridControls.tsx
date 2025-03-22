@@ -1,6 +1,19 @@
 import React from 'react';
 
-const GridControls = ({
+interface GridControlsProps {
+  showGrid: boolean;
+  setShowGrid: (value: boolean) => void;
+  snapToGrid: boolean;
+  setSnapToGrid: (value: boolean) => void;
+  showDistances: boolean;
+  setShowDistances: (value: boolean) => void;
+  gridSize: number;
+  setGridSize: (value: number) => void;
+  nodeSize: number;
+  setNodeSize: (value: number) => void;
+}
+
+const GridControls: React.FC<GridControlsProps> = ({
   showGrid,
   setShowGrid,
   snapToGrid,
