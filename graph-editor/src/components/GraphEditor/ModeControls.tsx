@@ -29,8 +29,13 @@ const Icons = {
   ),
 };
 
-const ModeControls = ({ editorMode, onModeChange }) => {
-  const buttonClass = (mode) => 
+interface ModeControlsProps {
+  editorMode: string;
+  onModeChange: (mode: string) => void;
+}
+
+const ModeControls: React.FC<ModeControlsProps> = ({ editorMode, onModeChange }) => {
+  const buttonClass = (mode: string) => 
     editorMode === mode
       ? 'p-1.5 rounded bg-blue-600 text-white ring-1 ring-blue-300 shadow-sm cursor-default pointer-events-none'
       : 'p-1.5 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors';

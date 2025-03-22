@@ -1,12 +1,19 @@
 import React from 'react';
 
-const ImageOverlay = ({ image, opacity, onImageUpload, onOpacityChange }) => {
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+interface ImageOverlayProps {
+  image: string | null;
+  opacity: number;
+  onImageUpload: (dataUrl: string) => void;
+  onOpacityChange: (opacity: number) => void;
+}
+
+const ImageOverlay: React.FC<ImageOverlayProps> = ({ image, opacity, onImageUpload, onOpacityChange }) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const dataUrl = e.target.result;
+        const dataUrl = e.target?.result as string;
         onImageUpload(dataUrl);
       };
       reader.readAsDataURL(file);
