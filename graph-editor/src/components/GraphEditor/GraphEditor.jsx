@@ -9,6 +9,7 @@ import ModeControls from './ModeControls';
 import SearchControls from './SearchControls';
 import { useGraphHistory } from './hooks/useGraphHistory';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useHighlight } from './hooks/useHighlight';
 import { 
   saveToWorkspace, 
   loadFromWorkspace, 
@@ -32,6 +33,7 @@ const GraphEditor = () => {
   const [imageOpacity, setImageOpacity] = useState(0.5);
   const [nodeCounter, setNodeCounter] = useState(0);
   const [roomCounter, setRoomCounter] = useState(0);
+  const { highlightedNode, setHighlightedNode, highlightOpacity } = useHighlight();
   
   // Load current workspace on mount
   useEffect(() => {
@@ -194,18 +196,6 @@ const GraphEditor = () => {
     setImageOpacity(show ? 0.5 : 0);
   };
 
-  const handleNeo4jImport = useCallback((importedNodes, importedEdges, nodeCounter, roomCounter) => {
-    setNodes(importedNodes);
-    setEdges(importedEdges);
-    setNodeCounter(nodeCounter);
-    setRoomCounter(roomCounter);
-    setSelectedNode(null);
-    setIsDrawing(false);
-    setDrawingFrom(null);
-    saveToHistory({ nodes: importedNodes, edges: importedEdges });
-    // Storage will be handled by the effect
-  }, [saveToHistory]);
-
   // Add debounced save effect
   useEffect(() => {
     if (currentWorkspace) {
@@ -310,7 +300,6 @@ const GraphEditor = () => {
           onImageToggle={handleImageToggle}
           nodes={nodes}
           edges={edges}
-          onImport={handleNeo4jImport}
         />
       </div>
 
@@ -381,6 +370,8 @@ const GraphEditor = () => {
         onRoomCounterChange={handleRoomCounterChange}
         viewportCenter={viewportCenter}
         setViewportCenter={setViewportCenter}
+        highlightedNode={highlightedNode}
+        highlightOpacity={highlightOpacity}
       />
     </div>
   );

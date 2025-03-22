@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { generateCypherExport, parseCypherImport } from '../../utils/neo4jConverter';
+import { generateCypherExport } from '../../utils/neo4jConverter';
 
 // Add Icons object with Neo4j and Cancel icons
 const Icons = {
@@ -17,28 +17,14 @@ const Icons = {
   ),
 };
 
-const Neo4jControls = ({ nodes, edges, onImport }) => {
+const Neo4jControls = ({ nodes, edges }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [cypherQuery, setCypherQuery] = useState('');
-  const [mode, setMode] = useState('export');
 
   const handleExport = () => {
     const cypher = generateCypherExport(nodes, edges);
     setCypherQuery(cypher);
-    setMode('export');
     setIsOpen(true);
-  };
-
-  const handleImport = () => {
-    try {
-      const { nodes: importedNodes, edges: importedEdges, nodeCounter, roomCounter } = parseCypherImport(cypherQuery);
-      onImport(importedNodes, importedEdges, nodeCounter, roomCounter);
-      setIsOpen(false);
-      setCypherQuery('');
-    } catch (error) {
-      console.error('Import error:', error);
-      alert('Invalid Cypher format');
-    }
   };
 
   const handleCopyToClipboard = async () => {
@@ -55,7 +41,7 @@ const Neo4jControls = ({ nodes, edges, onImport }) => {
       <button
         onClick={handleExport}
         className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
-        title="Export/Import Neo4j"
+        title="Export to Neo4j"
       >
         <Icons.Neo4j />
       </button>
@@ -63,34 +49,12 @@ const Neo4jControls = ({ nodes, edges, onImport }) => {
       {isOpen && (
         <div className="fixed top-4 left-20 z-50">
           <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg w-[480px]">
-            {/* Header with mode toggle */}
+            {/* Header */}
             <div className="flex items-center justify-between p-3 border-b border-slate-200">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setMode('export')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                    mode === 'export'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  Export
-                </button>
-                <button
-                  onClick={() => setMode('import')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                    mode === 'import'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  Import
-                </button>
-              </div>
+              <div className="text-sm font-medium">Neo4j Export</div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"
-                title="Close"
+                className="text-slate-400 hover:text-slate-600"
               >
                 <Icons.Cancel />
               </button>
@@ -100,18 +64,12 @@ const Neo4jControls = ({ nodes, edges, onImport }) => {
             <div className="p-3">
               <div className="space-y-2">
                 <div className="text-xs text-slate-500">
-                  {mode === 'export' ? (
-                    <>Generated Cypher query for {nodes.length} nodes and {edges.length} edges:</>
-                  ) : (
-                    <>Paste your Cypher query below to import nodes and edges:</>
-                  )}
+                  Generated Cypher query for {nodes.length} nodes and {edges.length} edges:
                 </div>
                 <textarea
                   value={cypherQuery}
-                  onChange={(e) => setCypherQuery(e.target.value)}
+                  readOnly
                   className="w-full h-[200px] p-2 text-xs font-mono bg-slate-50 border border-slate-200 rounded resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder={mode === 'import' ? "CREATE (n1:Node {...}) ..." : ""}
-                  readOnly={mode === 'export'}
                 />
               </div>
             </div>
@@ -124,21 +82,12 @@ const Neo4jControls = ({ nodes, edges, onImport }) => {
               >
                 Cancel
               </button>
-              {mode === 'export' ? (
-                <button
-                  onClick={handleCopyToClipboard}
-                  className="px-3 py-1 text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
-                >
-                  Copy to Clipboard
-                </button>
-              ) : (
-                <button
-                  onClick={handleImport}
-                  className="px-3 py-1 text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
-                >
-                  Import
-                </button>
-              )}
+              <button
+                onClick={handleCopyToClipboard}
+                className="px-3 py-1 text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+              >
+                Copy to Clipboard
+              </button>
             </div>
           </div>
         </div>
