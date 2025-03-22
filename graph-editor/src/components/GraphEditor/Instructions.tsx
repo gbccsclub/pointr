@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 
-const Instructions = ({ nodes, edges, gridSize, selectedNode, selectedEdge, editorMode }) => {
+interface InstructionsProps {
+  nodes: Array<{ label: string; x: number; y: number }>;
+  edges: Array<{ id: string }>;
+  gridSize: number;
+  selectedNode: { label: string; x: number; y: number } | null;
+  selectedEdge: { id: string } | null;
+  editorMode: 'select' | 'pathNode' | 'roomNode' | 'edge';
+}
+
+const Instructions: React.FC<InstructionsProps> = ({ nodes, edges, gridSize, selectedNode, selectedEdge, editorMode }) => {
   const [isVisible, setIsVisible] = useState(true);
 
   const getModeInstructions = () => {

@@ -19,20 +19,40 @@ import {
   STORAGE_KEYS 
 } from '../../utils/storage';
 
-const GraphEditor = () => {
+interface Node {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  label: string;
+}
+
+interface Edge {
+  id: string;
+  from: string;
+  to: string;
+}
+
+interface Workspace {
+  id: string;
+  name: string;
+  created: number;
+}
+
+const GraphEditor: React.FC = () => {
   // Workspace state
-  const [workspaces, setWorkspaces] = useState(loadWorkspaceList());
-  const [currentWorkspace, setCurrentWorkspace] = useState(null);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>(loadWorkspaceList());
+  const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
   
   // Graph state
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
-  const [selectedNode, setSelectedNode] = useState(null);
-  const [selectedEdge, setSelectedEdge] = useState(null);
-  const [overlayImage, setOverlayImage] = useState(null);
-  const [imageOpacity, setImageOpacity] = useState(0.5);
-  const [nodeCounter, setNodeCounter] = useState(0);
-  const [roomCounter, setRoomCounter] = useState(0);
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
+  const [overlayImage, setOverlayImage] = useState<string | null>(null);
+  const [imageOpacity, setImageOpacity] = useState<number>(0.5);
+  const [nodeCounter, setNodeCounter] = useState<number>(0);
+  const [roomCounter, setRoomCounter] = useState<number>(0);
   const { highlightedNode, setHighlightedNode, highlightOpacity } = useHighlight();
   
   // Load current workspace on mount
@@ -48,7 +68,7 @@ const GraphEditor = () => {
     }
   }, []);
 
-  const handleWorkspaceChange = (workspaceId) => {
+  const handleWorkspaceChange = (workspaceId: string) => {
     const workspace = workspaces.find(w => w.id === workspaceId);
     if (workspace) {
       const data = loadFromWorkspace(workspaceId);
@@ -63,8 +83,8 @@ const GraphEditor = () => {
     }
   };
 
-  const handleWorkspaceCreate = (name) => {
-    const newWorkspace = {
+  const handleWorkspaceCreate = (name: string) => {
+    const newWorkspace: Workspace = {
       id: `workspace-${Date.now()}`,
       name,
       created: Date.now()
@@ -76,7 +96,7 @@ const GraphEditor = () => {
     handleWorkspaceChange(newWorkspace.id);
   };
 
-  const handleWorkspaceDelete = (workspaceId) => {
+  const handleWorkspaceDelete = (workspaceId: string) => {
     // Remove workspace data
     const workspaceKey = `graph-editor-workspace-${workspaceId}`;
     localStorage.removeItem(workspaceKey);
@@ -95,15 +115,15 @@ const GraphEditor = () => {
     }
   };
 
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [drawingFrom, setDrawingFrom] = useState(null);
-  const [gridSize, setGridSize] = useState(10);
-  const [showGrid, setShowGrid] = useState(true);
-  const [showDistances, setShowDistances] = useState(false); // Changed from true to false
-  const [snapToGrid, setSnapToGrid] = useState(true);
-  const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
-  const [editorMode, setEditorMode] = useState('select');  // Change default mode to select
-  const [nodeSize, setNodeSize] = useState(3);
+  const [isDrawing, setIsDrawing] = useState<boolean>(false);
+  const [drawingFrom, setDrawingFrom] = useState<Node | null>(null);
+  const [gridSize, setGridSize] = useState<number>(10);
+  const [showGrid, setShowGrid] = useState<boolean>(true);
+  const [showDistances, setShowDistances] = useState<boolean>(false); // Changed from true to false
+  const [snapToGrid, setSnapToGrid] = useState<boolean>(true);
+  const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({ width: window.innerWidth, height: window.innerHeight });
+  const [editorMode, setEditorMode] = useState<string>('select');  // Change default mode to select
+  const [nodeSize, setNodeSize] = useState<number>(3);
 
   const { history, currentStateIndex, saveToHistory, handleUndo, canUndo } = useGraphHistory();
 
@@ -160,13 +180,13 @@ const GraphEditor = () => {
     setEditorMode
   });
 
-  const handleNodeSelect = (node) => {
+  const handleNodeSelect = (node: Node) => {
     setSelectedNode(node);
     setIsDrawing(false);
     setDrawingFrom(null);
   };
 
-  const handleEdgeCreate = (fromNode, toNode) => {
+  const handleEdgeCreate = (fromNode: Node, toNode: Node) => {
     if (fromNode && toNode && fromNode !== toNode) {
       // Check if an edge already exists between these nodes in either direction
       const edgeExists = edges.some(edge => 
@@ -175,7 +195,7 @@ const GraphEditor = () => {
       );
 
       if (!edgeExists) {
-        const newEdge = {
+        const newEdge: Edge = {
           id: `edge-${Date.now()}`,
           from: fromNode.id,
           to: toNode.id
@@ -188,11 +208,11 @@ const GraphEditor = () => {
     }
   };
 
-  const handleImageUpload = useCallback((imageData) => {
+  const handleImageUpload = useCallback((imageData: string) => {
     setOverlayImage(imageData);
   }, []);
 
-  const handleImageToggle = (show) => {
+  const handleImageToggle = (show: boolean) => {
     setImageOpacity(show ? 0.5 : 0);
   };
 
@@ -225,7 +245,7 @@ const GraphEditor = () => {
   }, []);
 
   // Add this function to handle node counter changes
-  const handleNodeCounterChange = useCallback((newCounter) => {
+  const handleNodeCounterChange = useCallback((newCounter: number) => {
     setNodeCounter(newCounter);
     if (currentWorkspace) {
       saveToWorkspace(
@@ -240,7 +260,7 @@ const GraphEditor = () => {
     }
   }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity, roomCounter]);
 
-  const handleRoomCounterChange = useCallback((newCounter) => {
+  const handleRoomCounterChange = useCallback((newCounter: number) => {
     setRoomCounter(newCounter);
     if (currentWorkspace) {
       saveToWorkspace(
@@ -256,10 +276,10 @@ const GraphEditor = () => {
   }, [currentWorkspace, nodes, edges, overlayImage, imageOpacity, nodeCounter]);
 
   // Add this state for viewport control
-  const [viewportCenter, setViewportCenter] = useState(null);
+  const [viewportCenter, setViewportCenter] = useState<{ x: number; y: number } | null>(null);
 
   // Add this handler function
-  const handleNodeSearch = (node) => {
+  const handleNodeSearch = (node: Node) => {
     setSelectedNode(node);
     // Set viewport center to trigger zoom and centering
     setViewportCenter({ x: node.x, y: node.y });

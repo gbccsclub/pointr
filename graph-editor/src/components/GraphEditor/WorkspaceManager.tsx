@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
 
+interface Workspace {
+  id: string;
+  name: string;
+  created: number;
+}
+
+interface WorkspaceManagerProps {
+  workspaces: Workspace[];
+  currentWorkspace: Workspace | null;
+  onWorkspaceChange: (workspaceId: string) => void;
+  onWorkspaceCreate: (name: string) => void;
+  onWorkspaceDelete: (workspaceId: string) => void;
+}
+
 // SVG Icons as components
 const Icons = {
   New: () => (
@@ -24,7 +38,7 @@ const Icons = {
   ),
 };
 
-const WorkspaceManager = ({
+const WorkspaceManager: React.FC<WorkspaceManagerProps> = ({
   workspaces,
   currentWorkspace,
   onWorkspaceChange,
